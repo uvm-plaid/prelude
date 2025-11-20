@@ -1,0 +1,12 @@
+exprfunctions:
+
+not(x){ (x + 1) }
+
+mux(s1, b1, b2){ (not(s1) * b1) + (s1 * b2) }
+
+cmdfunctions:
+
+main() {
+   m["x"]@1 := mux(r["x"], 1, 0)@2
+}
+postcondition: ( T )

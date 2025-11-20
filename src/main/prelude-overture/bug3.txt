@@ -1,0 +1,15 @@
+//
+// This program illustrates a bug in the Prelude Hoare logic inference prior
+// to November, 2025 (spec available as hoare.tex in jpdf/esop25).
+//
+cmdfunctions:
+
+precondition: ( m["foo"]@1 == 1 )
+f() {
+    m["bar"]@2 := 0
+}
+
+main() {
+    m["foo"]@1 := 1@1;
+    f()
+}
