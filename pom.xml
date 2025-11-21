@@ -82,7 +82,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>plaid.prelude.App</mainClass>
+                            <mainClass>plaid.prelude.main</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

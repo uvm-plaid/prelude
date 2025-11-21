@@ -12,6 +12,11 @@ import java.io.File
 import java.nio.file.Files
 import scala.compiletime.uninitialized
 
+@main
+def main(args: String*): Unit =
+  val exitCode = CommandLine(App()).execute(args*)
+  System.exit(exitCode)
+
 @Command(
   name = "prelude",
   version = Array("prelude-dev"),
@@ -45,10 +50,4 @@ class App extends Runnable {
         val status = if failures.contains(ent) then "FAIL" else "PASS"
         println(s"[$status] $test")))
     println(s"\nRan $totalTests tests\nHad $totalFailures failures")
-}
-
-object App {
-  def main(args: Array[String]): Unit =
-    val exitCode = CommandLine(App()).execute(args*)
-    System.exit(exitCode)
 }
