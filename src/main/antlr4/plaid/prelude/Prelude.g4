@@ -43,7 +43,7 @@ expr
     | 'r[' expr ']' #RandomExpr
     | 'm[' expr ']' #MessageExpr
     | 'p[' expr ']' #PublicExpr
-    | 'out' #OutputExpr
+    | 'out' ('[' expr ']')? #OutputExpr
     | '{' (flddecl (';' flddecl)*)? '}' #FieldExpr
     | ident #IdentExpr
     | STRING #Str
@@ -66,13 +66,8 @@ typedIdent : ident ':' type;
 flddecl : ident '=' expr ;
 ident : IDENTIFIER ;
 
-/* Lexer Rules */
-// We define value to be any integer
 VALUE : [0-9]+;
 IDENTIFIER : [_a-zA-Z][_a-zA-Z0-9]*;
-//('_'|'a'..'z'|'A'..'Z') ('_'|'a'..'z'|'A'..'Z'|'0'..'9')* ;
-// We define string to match double quotes
 STRING : '"' ~('"')+ '"';
-// We represent a whitespace token, ignored by skip
 WS : [ \t\n\r\f]+ -> skip;
 COMMENT : '//' ~[\r\n]* -> skip;

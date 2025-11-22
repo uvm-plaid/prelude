@@ -75,7 +75,7 @@ case class MessageExpr(e: Expr) extends Expr
 case class RandomExpr(e: Expr) extends Expr
 case class MinusExpr(e: Expr) extends Expr
 case class Num(num: Int) extends Expr
-case class OutputExpr() extends Expr
+case class OutputExpr(e: Expr) extends Expr
 case class PlusExpr(e1: Expr, e2: Expr) extends Expr
 case class PublicExpr(e: Expr) extends Expr
 case class SecretExpr(e: Expr) extends Expr

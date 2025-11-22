@@ -182,7 +182,7 @@ class TermFactoryTest {
     val ast = Loader.constraint("out@1 == out@2 + 1 AND out@2 == out@3 + 2 AND out@3 == 4")
     val term = factory.toTerm(ast)
     val actual = factory.findModelSatisfying(term)
-    val expected = Map("o_3" -> 4, "o_2" -> 6, "o_1" -> 0)
+    val expected = Map("o_~_3" -> 4, "o_~_2" -> 6, "o_~_1" -> 0)
     assertEquals(mockModel(factory, expected), actual)
 
   /** Does not register a new cvc5 term if one already exists for the memory */

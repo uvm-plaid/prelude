@@ -10,7 +10,8 @@ class CvcUtilsTest {
   @Test
   def memNames(): Unit =
     assertEquals("m_x_4", CvcUtils.getCvcName(MessageExpr(Str("x")), Some(4)))
-    assertEquals("o_4", CvcUtils.getCvcName(OutputExpr(), Some(4)))
+    assertEquals("o_x_4", CvcUtils.getCvcName(OutputExpr(Str("x")), Some(4)))
+    assertEquals("o_~_4", CvcUtils.getCvcName(OutputExpr(Str("~")), Some(4)))
     assertEquals("p_x", CvcUtils.getCvcName(PublicExpr(Str("x")), Some(4)))
     assertEquals("r_x_4", CvcUtils.getCvcName(RandomExpr(Str("x")), Some(4)))
     assertEquals("s_x_4", CvcUtils.getCvcName(SecretExpr(Str("x")), Some(4)))
@@ -23,7 +24,7 @@ class CvcUtilsTest {
   /** Party index is required for output memory names. */
   @Test(expected = classOf[Exception])
   def outputNoParty(): Unit =
-    assertEquals("o_4", CvcUtils.getCvcName(OutputExpr(), None))
+    assertEquals("o_4", CvcUtils.getCvcName(OutputExpr(Str("~")), None))
 
   /** Party index is required for random memory names. */
   @Test(expected = classOf[Exception])

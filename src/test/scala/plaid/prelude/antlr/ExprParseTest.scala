@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import plaid.prelude.ast.{AtExpr, CallExpr, ConcatExpr, FieldExpr, FieldSelectExpr, Identifier, LetExpr, MessageExpr, MinusExpr, Node, Num, OutputExpr, PlusExpr, PublicExpr, RandomExpr, SecretExpr, Str, TimesExpr}
 
-class ExpressionParseTest {
+class ExprParseTest {
 
   /** String literals parse, and no quotes in the tree. */
   @Test
@@ -49,14 +49,19 @@ class ExpressionParseTest {
     val select = FieldSelectExpr(Identifier("parent"), Identifier("child"))
     assertEquals(TimesExpr(Num(8), select), expr)
 
-  /** Parses memory expressions. */
+  /** Parses common memory expressions. */
   @Test
   def memoryExpr(): Unit =
-    assertEquals(OutputExpr(), Loader.expression("out"))
     assertEquals(SecretExpr(Str("x")), Loader.expression("s[\"x\"]"))
     assertEquals(MessageExpr(Str("x")), Loader.expression("m[\"x\"]"))
     assertEquals(RandomExpr(Str("x")), Loader.expression("r[\"x\"]"))
     assertEquals(PublicExpr(Str("x")), Loader.expression("p[\"x\"]"))
+
+  /** Output expressions have optional index. */
+  @Test
+  def outputExprIndex(): Unit =
+    assertEquals(OutputExpr(Str("~")), Loader.expression("out"))
+    assertEquals(OutputExpr(Str("x")), Loader.expression("out[\"x\"]"))
 
   /** Multiple party indexes get assigned correctly as siblings. */
   @Test

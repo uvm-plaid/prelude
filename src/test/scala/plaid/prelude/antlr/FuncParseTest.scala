@@ -2,7 +2,7 @@ package plaid.prelude.antlr
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import plaid.prelude.ast.{AssignCmd, AtExpr, CmdFunc, EqualConstraint, ExprFunc, Identifier, Num, OutputExpr, PartyIndexType, StringType, TrueConstraint, TypedIdentifier}
+import plaid.prelude.ast.{AssignCmd, AtExpr, CmdFunc, EqualConstraint, ExprFunc, Identifier, Num, OutputExpr, PartyIndexType, Str, StringType, TrueConstraint, TypedIdentifier}
 
 class FuncParseTest {
 
@@ -19,7 +19,7 @@ class FuncParseTest {
   /** Parses command functions of zero, one, and multiple parameters. */
   @Test
   def commandFunctions(): Unit =
-    val body = List(AssignCmd(OutputExpr(), Num(2)))
+    val body = List(AssignCmd(OutputExpr(Str("~")), Num(2)))
     val f = CmdFunc(Identifier("f"), Nil, body, None, None)
     val g = CmdFunc(Identifier("g"),
       List(TypedIdentifier(Identifier("x"), StringType())), body, None, None)
@@ -38,9 +38,9 @@ class FuncParseTest {
       CmdFunc(
         Identifier("f"),
         Nil,
-        List(AssignCmd(AtExpr(OutputExpr(), Num(1)), AtExpr(Num(3), Num(1)))),
+        List(AssignCmd(AtExpr(OutputExpr(Str("~")), Num(1)), AtExpr(Num(3), Num(1)))),
         Some(TrueConstraint()),
-        Some(EqualConstraint(AtExpr(OutputExpr(), Num(1)), Num(3)))),
+        Some(EqualConstraint(AtExpr(OutputExpr(Str("~")), Num(1)), Num(3)))),
       Loader.cmdFunc("precondition: (T) f() {out@1:=3@1} postcondition: (out@1 == 3)"))
 
   /** Parses command function without a precondition or postcondition. */
@@ -49,7 +49,7 @@ class FuncParseTest {
     assertEquals(
       CmdFunc(
         Identifier("f"), Nil,
-        List(AssignCmd(AtExpr(OutputExpr(), Num(1)), AtExpr(Num(3), Num(1)))),
+        List(AssignCmd(AtExpr(OutputExpr(Str("~")), Num(1)), AtExpr(Num(3), Num(1)))),
         None, None),
       Loader.cmdFunc("f() {out@1:=3@1}"))
 }

@@ -9,7 +9,7 @@ object CvcUtils {
     case PublicExpr(e) => s"p_${toString(e)}"
     case RandomExpr(e) => s"r_${toString(e)}_${idx.get}"
     case SecretExpr(e) => s"s_${toString(e)}_${idx.get}"
-    case _: OutputExpr => s"o_${idx.get}"
+    case OutputExpr(e) => s"o_${toString(e)}_${idx.get}"
     case other => throw Exception(s"Must be memory, found ${other.getClass.getName}")
 
   def toInt(expr: Expr): Int = expr match

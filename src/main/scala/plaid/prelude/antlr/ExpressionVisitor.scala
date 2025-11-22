@@ -45,7 +45,10 @@ object ExpressionVisitor extends PreludeBaseVisitor[Expr] {
   override def visitPublicExpr(ctx: PublicExprContext) = PublicExpr(
     e = visit(ctx.expr()))
 
-  override def visitOutputExpr(ctx: OutputExprContext) = OutputExpr()
+  override def visitOutputExpr(ctx: OutputExprContext) = OutputExpr(
+    if ctx.getChildCount > 1
+    then visit(ctx.expr())
+    else Str("~"))
 
   override def visitPlusExpr(ctx: PlusExprContext) = PlusExpr(
     e1 = visit(ctx.expr(0)),

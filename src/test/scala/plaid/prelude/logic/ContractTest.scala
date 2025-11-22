@@ -3,7 +3,7 @@ package plaid.prelude.logic
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import plaid.prelude.antlr.Loader
-import plaid.prelude.ast.{AndConstraint, AtExpr, EqualConstraint, Num, OutputExpr, TrueConstraint}
+import plaid.prelude.ast.{AndConstraint, AtExpr, EqualConstraint, Num, OutputExpr, Str, TrueConstraint}
 import plaid.prelude.logic.contract
 
 class ContractTest {
@@ -13,7 +13,7 @@ class ContractTest {
   def assignmentAddsEqualityConstraint(): Unit =
     val cmd = Loader.command("out@1 := 4")
     assertEquals(
-      PrePost(TrueConstraint(), EqualConstraint(AtExpr(OutputExpr(), Num(1)), Num(4))),
+      PrePost(TrueConstraint(), EqualConstraint(AtExpr(OutputExpr(Str("~")), Num(1)), Num(4))),
       cmd.prePost(Nil))
 
   /** Assert commands add entailments to the Hoare context. */

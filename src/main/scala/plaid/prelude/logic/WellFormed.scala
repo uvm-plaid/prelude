@@ -17,7 +17,7 @@ private def legalNodeType(n: Node) = n match
   case SecretExpr(_) => true
   case MessageExpr(_) => true
   case PublicExpr(_) => true
-  case OutputExpr() => true
+  case OutputExpr(_) => true
   case Str(_) => true
   case Num(_) => true
   case _  => false
@@ -46,7 +46,7 @@ private def memoryAtWrapped(n: Node) = n match
   case AtExpr(RandomExpr(_), Num(_)) => true
   case AtExpr(SecretExpr(_), Num(_)) => true
   case AtExpr(PublicExpr(_), Num(_)) => true
-  case AtExpr(OutputExpr(), Num(_)) => true
+  case AtExpr(OutputExpr(_), Num(_)) => true
   case x: AtExpr => false
   case _ => true
 
