@@ -1,46 +1,48 @@
 package plaid.prelude.logic
 
 import plaid.prelude.ast.ListCmdFuncExt.dependencyOrdered
-import plaid.prelude.ast.{AndConstraint, AssertCmd, AssignCmd, CallCmd, Cmd, CmdFunc, Constraint, ConstraintFunc, EqualConstraint, ExprFunc, Identifier, Node, TrueConstraint}
+import plaid.prelude.ast.{AndConstraint, AssertCmd, AssignCmd, CallCmd, Cmd, CmdFunc, Constraint, ConstraintFunc, EqualConstraint, ExprFunc, Identifier, ImpliesConstraint, TrueConstraint}
 
-case class Entailment(origin: Node, a: Constraint, b: Constraint)
+case class Hoare(pre: Constraint, post: Constraint)
 
-/**
- * A context that is built up as commands are processed in succession. It
- * includes as a single constraint the conjunction of the postconditions of all
- * the commands that have been processed so far, and a collection of all the
- * entailments that have to hold based on all the commands that have been
- * processed so far.
- */
-case class HoareContext(cons: Constraint = TrueConstraint(), ent: List[Entailment] = Nil) {
-  /** Add a new postcondition in the constraint of this Hoare context. */
-  private def include(c: Constraint): HoareContext = copy(cons = AndConstraint(cons, c))
-  /** Add a new entailment to this Hoare context. */
-  private def include(e: Entailment): HoareContext = copy(ent = e :: ent)
-  /** Include a new command in this Hoare context. */
-  def include(cmd: Cmd, contracts: List[Contract]): HoareContext = cmd match
-    case AssertCmd(e1, e2, party) =>
-      val a = e1.indexParties(Some(party))
-      val b = e2.indexParties(Some(party))
-      include(Entailment(cmd, cons, EqualConstraint(a, b)))
-    case AssignCmd(e1, e2) => include(EqualConstraint(e1.indexParties(), e2.indexParties()))
-    case CallCmd(id, parms) =>
-      val contract = contracts.lookup(id)
-      val formalParms = contract.f.typedVariables.map(_.y)
-      val actualParms = parms.map(_.indexParties())
-      val bindings = formalParms.zip(actualParms).toMap
-      val pre = contract.pre.expand(bindings = bindings)
-      val post = contract.post.expand(bindings = bindings)
-      include(Entailment(cmd, cons, pre)).include(post)
-    case other => throw Exception(s"Unsupported command $other")
-}
+def hoare(cmd: Cmd, contracts: List[Contract]): Hoare = cmd match
+  case AssertCmd(e1, e2, party) =>
+    val a = e1.indexParties(Some(party))
+    val b = e2.indexParties(Some(party))
+    Hoare(EqualConstraint(a, b), TrueConstraint())
+  case AssignCmd(e1, e2) => Hoare(
+    pre = TrueConstraint(),
+    post = EqualConstraint(e1, e2))
+  case CallCmd(id, parms) =>
+    val contract = contracts.lookup(id)
+    val formalParms = contract.f.typedVariables.map(_.y)
+    val actualParms = parms.map(_.indexParties())
+    val bindings = formalParms.zip(actualParms).toMap
+    val pre = contract.customPre.expand(bindings = bindings)
+    val post = contract.customPost.expand(bindings = bindings)
+    Hoare(pre, post)
+  case _ => throw Exception(s"Unsupported $cmd")
+
+def hoare(lst: List[Cmd], contracts: List[Contract]): Hoare =
+  val start = Hoare(TrueConstraint(), TrueConstraint())
+  val triples = lst.map(hoare(_, contracts))
+  triples.foldLeft(start) { (acc, cmd) => Hoare(
+    pre = AndConstraint(acc.pre, ImpliesConstraint(acc.post, cmd.pre)),
+    post = AndConstraint(acc.post, cmd.post))
+  }
 
 /**
  * Tracks for a function what its (possibly inferred) preconditions and
  * postconditions are, as well as any entailments that must hold internally so
  * that the postcondition can actually be trusted.
  */
-case class Contract(f: CmdFunc, pre: Constraint, post: Constraint, internals: List[Entailment])
+case class Contract(
+  f: CmdFunc,
+  customPre: Constraint,
+  customPost: Constraint,
+  defaultPre: Constraint,
+  defaultPost: Constraint,
+  check: Boolean)
 
 extension (trg: List[Contract])
   /** Look up the contract for the specified command function identifier. */
@@ -53,12 +55,16 @@ extension (trg: List[CmdFunc])
     .foldLeft(Nil) { (acc, x) => x.contract(exprFns, constraintFns, acc) :: acc }
 
 extension (trg: CmdFunc)
+  def requiresChecking(): Boolean =
+    trg.body.nonEmpty && (trg.precond.nonEmpty || trg.postcond.nonEmpty)
+
   def contract(exprFns: List[ExprFunc], constraintFns: List[ConstraintFunc], contractCtx: List[Contract]): Contract =
-    val pre = trg.precond.getOrElse(TrueConstraint()).expand(exprFns, constraintFns)
-    val ctx = trg.body
-      .flatMap(_.expand(exprFns))
-      .foldLeft(HoareContext(cons = pre)) { (acc, x) => acc.include(x, contractCtx) }
-    val post = trg.postcond.getOrElse(ctx.cons).expand(exprFns, constraintFns)
-    // Empty body for "magic" function that just gets admitted
-    val ent = if trg.body.isEmpty then Nil else Entailment(trg, ctx.cons, post) :: ctx.ent
-    Contract(trg, pre, post, ent)
+    val body = trg.body.flatMap(_.expand(exprFns))
+    val ctx = hoare(body, contractCtx)
+    Contract(
+      f = trg,
+      customPre = trg.precond.getOrElse(ctx.pre).expand(exprFns, constraintFns),
+      customPost = trg.postcond.getOrElse(ctx.post).expand(exprFns, constraintFns),
+      defaultPre = ctx.pre.expand(exprFns, constraintFns),
+      defaultPost = ctx.post.expand(exprFns, constraintFns),
+      check = trg.requiresChecking())

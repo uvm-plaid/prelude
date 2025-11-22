@@ -1,7 +1,9 @@
 package plaid.prelude.logic
 
 import io.github.cvc5.{Kind, Solver, Term}
+import plaid.prelude.ast.AndConstraint
 import plaid.prelude.cvc.TermFactory
+import plaid.prelude.logic.VerificationStatus.{FAIL, PASS, SKIP}
 
 extension (trg: TermFactory)
   /** Determine if the term has a set of assignments that make it true. */
@@ -28,20 +30,29 @@ extension (trg: TermFactory)
     val e1EntailsNotE2 = trg.termManager.mkTerm(Kind.AND, e1, notE2)
     !satisfiable(e1EntailsNotE2)
 
+enum VerificationStatus {
+  case PASS
+  case FAIL
+  case SKIP
+}
+
 extension (trg: Contract)
   /** Finds any entailments in a function contract that are false. */
-  def verificationFailures(cvc: TermFactory): List[Entailment] =
+  def verify(cvc: TermFactory): VerificationStatus =
+    if !trg.check then return SKIP
     val bindings = trg.f.typedVariables.map(x => x.y -> x.t.freshValue()).toMap
-    trg.internals.filter { x =>
-      val a = x.a.expand(bindings = bindings)
-      val b = x.b.expand(bindings = bindings)
+    val customPre = trg.customPre.expand(bindings = bindings)
+    val customPost = trg.customPost.expand(bindings = bindings)
+    val defaultPre = trg.defaultPre.expand(bindings = bindings)
+    val defaultPost = trg.defaultPost.expand(bindings = bindings)
 
-      // TODO Validation shouldn't really go here, it needs to be revisited
-      val ctx = trg.f.id.name
-      val constraintErrors = a.checkProperExpansion(ctx) ++ b.checkProperExpansion(ctx)
-      constraintErrors.foreach(x => println(s"ERROR ${x.ctx}: ${x.msg}: ${x.offender}"))
-      if constraintErrors.nonEmpty then
-        throw Exception("Found errors in the constraints, bailing out.")
+//      // TODO Validation shouldn't really go here, it needs to be revisited
+//      val ctx = trg.f.id.name
+//      val constraintErrors = a.checkProperExpansion(ctx) ++ b.checkProperExpansion(ctx)
+//      constraintErrors.foreach(x => println(s"ERROR ${x.ctx}: ${x.msg}: ${x.offender}"))
+//      if constraintErrors.nonEmpty then
+//        throw Exception("Found errors in the constraints, bailing out.")
 
-      !cvc.entails(cvc.toTerm(a), cvc.toTerm(b))
-    }
+    val pre = cvc.entails(cvc.toTerm(customPre), cvc.toTerm(defaultPre))
+    val post = cvc.entails(cvc.toTerm(AndConstraint(customPre, defaultPost)), cvc.toTerm(customPost))
+    if pre && post then PASS else FAIL

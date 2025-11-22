@@ -14,9 +14,9 @@ object CvcUtils {
 
   def toInt(expr: Expr): Int = expr match
     case Num(num) => num
-    case other => throw Exception(s"Must be number, found ${other.getClass.getName}")
+    case _ => throw Exception(s"Must be number, found $expr")
 
   def toString(expr: Expr): String = expr match
     case Str(str) => str
-    case other => throw Exception(s"Must be string, found ${other.getClass.getName}")
+    case _ => throw Exception(s"Must be string, found $expr")
 }

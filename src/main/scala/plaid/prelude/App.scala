@@ -6,7 +6,8 @@ import plaid.prelude.antlr.Loader
 import plaid.prelude.ast.ListConstraintFuncExt.expandAll
 import plaid.prelude.ast.ListExprFuncExt.expandAll
 import plaid.prelude.cvc.TermFactory
-import plaid.prelude.logic.{contracts, verificationFailures}
+import plaid.prelude.logic.VerificationStatus.FAIL
+import plaid.prelude.logic.{contracts, verify}
 
 import java.io.File
 import java.nio.file.Files
@@ -35,19 +36,11 @@ class App extends Runnable {
     val exprFns = ast.exprFuncs.expandAll()
     val constraintFns = ast.constraintFuncs.expandAll(exprFns)
     val contracts = ast.cmdFuncs.contracts(exprFns, constraintFns)
+    val statuses = contracts.map(_.verify(TermFactory(fieldSize)))
+    val failures = statuses.count(x => x == FAIL)
 
-    var totalTests = 0
-    var totalFailures = 0
+    contracts.zip(statuses).foreach((contract, status) =>
+      println(s"$status ${contract.f.id.name}"))
 
-    contracts.filter(_.f.body.nonEmpty).foreach(x =>
-      println(s"*** ${x.f.id.name}")
-      val termFactory = TermFactory(fieldSize)
-      val failures = x.verificationFailures(termFactory)
-      totalTests += x.internals.size
-      totalFailures += failures.size
-      x.internals.foreach(ent =>
-        val test = if ent.origin == x.f then "(postcondition)" else ent.origin.prettyPrint()
-        val status = if failures.contains(ent) then "FAIL" else "PASS"
-        println(s"[$status] $test")))
-    println(s"\nRan $totalTests tests\nHad $totalFailures failures")
+    println(s"$failures verification failures")
 }
