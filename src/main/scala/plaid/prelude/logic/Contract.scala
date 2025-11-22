@@ -3,38 +3,32 @@ package plaid.prelude.logic
 import plaid.prelude.ast.ListCmdFuncExt.dependencyOrdered
 import plaid.prelude.ast.{AndConstraint, AssertCmd, AssignCmd, CallCmd, Cmd, CmdFunc, Constraint, ConstraintFunc, EqualConstraint, ExprFunc, Identifier, ImpliesConstraint, TrueConstraint}
 
-case class Hoare(pre: Constraint, post: Constraint)
+case class PrePost(pre: Constraint, post: Constraint)
 
-def hoare(cmd: Cmd, contracts: List[Contract]): Hoare = cmd match
-  case AssertCmd(e1, e2, party) =>
-    val a = e1.indexParties(Some(party))
-    val b = e2.indexParties(Some(party))
-    Hoare(EqualConstraint(a, b), TrueConstraint())
-  case AssignCmd(e1, e2) => Hoare(
-    pre = TrueConstraint(),
-    post = EqualConstraint(e1, e2))
-  case CallCmd(id, parms) =>
-    val contract = contracts.lookup(id)
-    val formalParms = contract.f.typedVariables.map(_.y)
-    val actualParms = parms.map(_.indexParties())
-    val bindings = formalParms.zip(actualParms).toMap
-    val pre = contract.customPre.expand(bindings = bindings)
-    val post = contract.customPost.expand(bindings = bindings)
-    Hoare(pre, post)
-  case _ => throw Exception(s"Unsupported $cmd")
-
-def hoare(lst: List[Cmd], contracts: List[Contract]): Hoare =
-  val start = Hoare(TrueConstraint(), TrueConstraint())
-  val triples = lst.map(hoare(_, contracts))
-  triples.foldLeft(start) { (acc, cmd) => Hoare(
-    pre = AndConstraint(acc.pre, ImpliesConstraint(acc.post, cmd.pre)),
-    post = AndConstraint(acc.post, cmd.post))
-  }
+extension (trg: Cmd)
+  /** Gets the pre-conditions and post-conditions per the inference rules. */
+  def prePost(contracts: List[Contract]): PrePost = trg match
+    case AssertCmd(e1, e2, party) =>
+      val a = e1.indexParties(Some(party))
+      val b = e2.indexParties(Some(party))
+      PrePost(EqualConstraint(a, b), TrueConstraint())
+    case AssignCmd(e1, e2) => PrePost(
+      pre = TrueConstraint(),
+      post = EqualConstraint(e1, e2))
+    case CallCmd(id, parms) =>
+      val contract = contracts.lookup(id)
+      val formalParms = contract.f.typedVariables.map(_.y)
+      val actualParms = parms.map(_.indexParties())
+      val bindings = formalParms.zip(actualParms).toMap
+      val pre = contract.customPre.expand(bindings = bindings)
+      val post = contract.customPost.expand(bindings = bindings)
+      PrePost(pre, post)
+    case _ => throw Exception(s"Unsupported $trg")
 
 /**
- * Tracks for a function what its (possibly inferred) preconditions and
- * postconditions are, as well as any entailments that must hold internally so
- * that the postcondition can actually be trusted.
+ * Tracks for a function what its default (and possibly custom) preconditions
+ * and postconditions are, as well as whether the function needs hardpack
+ * checking.
  */
 case class Contract(
   f: CmdFunc,
@@ -60,7 +54,14 @@ extension (trg: CmdFunc)
 
   def contract(exprFns: List[ExprFunc], constraintFns: List[ConstraintFunc], contractCtx: List[Contract]): Contract =
     val body = trg.body.flatMap(_.expand(exprFns))
-    val ctx = hoare(body, contractCtx)
+    val start = PrePost(TrueConstraint(), TrueConstraint())
+    val triples = body.map(_.prePost(contractCtx))
+    val ctx = triples.foldLeft(start) { (acc, cmd) =>
+      PrePost(
+        pre = AndConstraint(acc.pre, ImpliesConstraint(acc.post, cmd.pre)),
+        post = AndConstraint(acc.post, cmd.post))
+    }
+
     Contract(
       f = trg,
       customPre = trg.precond.getOrElse(ctx.pre).expand(exprFns, constraintFns),
