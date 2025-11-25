@@ -1,114 +1,134 @@
-# Prelude-Overture
+# Prelude Constraint Verifier
 
------
-## Overview
-- This is source codes for Prelude-Overture project.
-- Both Prelude and Overture are languages for multi-party computation.
-- Prelude is a high-level language that sketches protocols and circuits. This evaluates to a low-level language, Overture, where we can check correctness using an SMT-solver in CVC5.
-- The project contains:
-    1) Prelude/Overture grammar including its lexer and parser
-    2) Prelude interpreter that evaluates to Overture
-    3) TermFactory that translates Overture protocol into CVC5 language
-    4) Verifier that checks if an Overture protocol entails a certain constraint
-- We used ANTLR to write the grammars/lexer/parser.
-- Java and Scala are the primary languages for this project implementation.
-----
-## Directories
-- [**src**](src)
-    - [**main**](src/main)
-        - [**antlr4**](src/main/antlr4)
-            - [**plaid**](src/main/antlr4/plaid): Prelude/Overture and Constraints Grammars
-        - [**java**](src/main/java)
-            - [**plaid**](src/main/java/plaid)
-                - [**antlr**](src/main/java/plaid/antlr): AST translations
-                - [**cvc**](src/main/java/plaid/cvc): CVC5 transformations
-                - [**eval**](src/main/java/plaid/eval): Evaluation
-                - [**App.java**](src/main/java/plaid/App.java): Main Test
-        - [**prelude-overture**](src/main/prelude-overture): Prelude src examples
-        - [**scala**](src/main/scala)
-            - [**plaid**](src/main/scala/plaid/prelude)
-                - [**ast**](src/main/scala/plaid/prelude/ast): AST for Prelude/Overture
-                  - [**constraints.ast**](src/main/scala/plaid/prelude/constraints.ast): AST for Constraints
-                - [**eval**](src/main/scala/plaid/prelude/eval): OvertureChecker
-    - [**test**](src/test): Unit tests
+## Installation
 
-------
+These instructions are for Debian-based Linux distributions. Installation on
+MacOS is possible, and installation on Windows _may_ be posssible; but in
+either case, some of the steps for will differ.
 
-## Setting up cvc5
+### Python (for the cvc5 solver build)
 
-These instructions are for Debian-based Linux distributions. The steps for
-Windows or MacOS will vary.
-
-The steps about Java 8 are for an older version of `cvc5`. The newer versions
-are compatible with more recent versions of Java.
-
-I also think, but haven't tested, that without `--prefix` that the `cvc5`
-shared object files will get dumped into somewhere that is already on the Java
-system library path (and then you wouldn't have to move the `.so` flies or
-tell Maven about where it can find them.
+There are many ways to install `python`. These instructions assume `pyenv` is
+installed, and use it to create and activate a suitable environment for the
+build. If you already have an installation, chances are you can just use that.
 
 ```
-# Install some build tools
+# Create and activate a virtual python environment
+pyenv install 3.13.2
+pyenv virtualenv 3.13.2 cvc5
+pyenv activate cvc5
+
+# Install something needed by make
+python -m pip install pyparsing
+```
+
+Stay in the same terminal so that the environment will remain active.
+
+### The java virtual machine
+
+A JVM is necessary both for the cvc5 build and to use prelude. If you already
+have a java installation, chances are you can just use that.
+
+```
+# Install java virtual machine
+sudo apt install openjdk-25-jdk
+
+# Tell make where java is (might differ by architecture?)
+export JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64
+```
+
+Note that the cvc5 build process _does_ require `JAVA_HOME` to be set.
+
+### The cvc5 solver
+
+Someone created an `apt` package for cvc5, but that package on last review lags
+far behind development, and is currently incompatible with Prelude. These
+instructions are for building cvc5 from source, in particular the version of
+cvc5 that is not the most recent, and one that is compatible with prelude.
+
+We have observed though that upstream changes to cvc5 dependencies sometimes
+make it so older versions of cvc5 no longer build. This will be a risk for
+reproducibility unless someone actively maintains prelude.
+
+```
+# Install tooling for the build
 sudo apt install cmake m4
 
-# Install an old JDK compatible with cmake or cvc5 or whatever
-sudo apt install openjdk-8-jdk
-
-# Use this JDK for the cvc5 build process
-export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
-
-# Clone the cvc5 repo from github
+# Download the cvc5 repository
 git clone https://github.com/cvc5/cvc5
-cd cvc5
 
-# Switch to latest stable branch
-# Replace the version number if needed
+# Switch to a version known to work with Prelude
 git checkout cvc5-1.1.2
 
-# Build the project and java bindings
-./configure.sh production --java-bindings --auto-download --prefix=build/install
+# Configure the build with some extensions
+cd cvc5
+./configure.sh production --auto-download --cocoa --gpl --java-bindings
+
+# Build cvc5 (takes a long time)
 cd build
 make
-make install
 
-# If the libraries have been moved to a standard location
-java -jar target/MyProject-1.0-SNAPSHOT-jar-with-dependencies.jar
-
-# If the libraries have not been moved
-java -Djava.library.path="/home/bob/src/cvc5/build/install/lib" -jar target/MyProject-1.0-SNAPSHOT-jar-with-dependencies.jar
+# Install libraries to /usr/local
+sudo make install
 ```
 
-## Installation & Running
+This should put cvc5 binaries and libraries libraries in `/usr/local`.
 
-Maven is required to build this project.
-```
-mvn package
-```
+### Prelude
 
-CVC5 needs to be installed to run this project, along with its Java bindings. The path to the CVC5 libraries then need to be added to Java's library path. The actual path will depend on how the CVC5 build was configured.
-
-On MacOS,
 ```
+# Install build tool for the project
+sudo apt install maven
+
+# Download the prelude repospitory
+git clone ...
+
+# Tell java to use the cvc5 libraries (mac os only)
 export DYLD_LIBRARY_PATH=/usr/local/lib
-```
 
-On Linux,
-```
+# Tell java to use the cvc5 libraries (linux only)
 export LD_LIBRARY_PATH=/usr/local/lib
+
+# Build prelude
+cd prelude
+mvn clean package
 ```
 
-To run the tool on an example using the binary field,
+## Running examples
+
+The tool accepts as parameters a field size with the switch `--field-size=x` or
+`-s x` and the path to a prelude source file. To run the tool on an example
+using the binary field, try
+
 ```
-java -jar target/prelude.jar --field-size=2 src/main/prelude-overture/beaver-pre.txt
+java -jar target/prelude.jar --field-size=2 example/gates-passive.txt
 ```
+
+The tool outputs a list of the functions in the source file. Each function is
+labeled
+
+- **PASS** If the function satisfies the contract specified by its
+preconditions and postconditions
+- **FAIL** If the function does not satisfy the contract specified by its
+preconditions and postconditions
+- **SKIP** If the function lacks both preconditions and postconditions, _or_
+if the braces 
 
 Further documentation about supported parameters is available via
+
 ```
 java -jar target/prelude.jar --help
 ```
 
--------
-## License
-PLAID Lab, University of Vermont
+## Project structure
 
+This prelude implementation is written in Scala, and adheres to the standard
+Maven project structure. Files and locations of note include
 
+- [/example](example) - A collection of example prelude programs
+- [/src/main/scala/plaid/prelude/App.scala](/src/main/scala/plaid/prelude/App.scala) - The entry point to the comand line application
+- [/src/main/antlr4/plaid/prelude/Prelude.g4](src/main/antlr4/plaid/prelude/Prelude.g4) - The ANTLR4 grammar for the prelude language
+- [/src/main/scala/plaid/prelude/ast](/src/main/scala/plaid/prelude/ast) - Simplified abstract syntax tree
+- [/src/main/scala/plaid/prelude/antlr](/src/main/scala/plaid/prelude/antlr) - Conversion from the ANTLR4 AST to the simpilified AST
+- [/src/main/scala/plaid/prelude/logic](/src/main/scala/plaid/prelude/logic) - Contract checking
+- [/src/main/scala/plaid/prelude/cvc](/src/main/scala/plaid/prelude/cvc) - Bridge to the cvc5 solver
