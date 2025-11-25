@@ -58,7 +58,7 @@ sudo apt install cmake m4
 git clone https://github.com/cvc5/cvc5
 
 # Switch to a version known to work with Prelude
-git checkout cvc5-1.1.2
+git checkout cvc5-1.2.0
 
 # Configure the build with some extensions
 cd cvc5
