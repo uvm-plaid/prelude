@@ -111,8 +111,11 @@ labeled
 preconditions and postconditions
 - **FAIL** If the function does not satisfy the contract specified by its
 preconditions and postconditions
-- **SKIP** If the function lacks both preconditions and postconditions, _or_
-if the braces 
+- **SKIP** If the function lacks both preconditions and postconditions (in 
+which case the precondition is implicitly `T` and the postcondition is
+implicitly the cumulative effect of the commands in its body), _or_
+if the function body and its enclosing braces are missing (in which case the
+contract is simply admitted)
 
 Further documentation about supported parameters is available via
 
