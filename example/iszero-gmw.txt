@@ -2,6 +2,8 @@ exprfunctions:
 
 not(x){ x + 1 }
 
+or(x,y){ (x * y) + (x + y) } 
+
 mux4(s1, s2, b1, b2, b3, b4){
   (not(s1) * not(s2) * b1) +  (not(s1) * (s2) * b2) + ((s1) * not(s2) * b3) + ((s1) * (s2) * b4) 
 }
@@ -44,7 +46,7 @@ xorgmw(z:string, x:string, y:string) {
 }
 postcondition: ( RECON(z) == RECON(x) + RECON(y) )
 
-precondition: ( RECON("0")  == 1 AND RECON("1") == 1 )
+// precondition: ( RECON("0")  == 1 AND RECON("1") == 1 )
 main()
 {
 notgmw("65", "63");
@@ -177,4 +179,7 @@ andgmw("190", "189", "188");
 p["iszero"] := m["190"]@2;
 out@1 := (p["iszero"] + m["190"])@1
 }
-postcondition: (  out@1 == 0 )
+postcondition: (
+or(RECON("63"), or(RECON("62"), or(RECON("61"), or(RECON("60"), or(RECON("59"), or(RECON("58"), or(RECON("57"), or(RECON("56"), or(RECON("55"), or(RECON("54"), or(RECON("53"), or(RECON("52"), or(RECON("51"), or(RECON("50"), or(RECON("49"), or(RECON("48"), or(RECON("47"), or(RECON("46"), or(RECON("45"), or(RECON("44"), or(RECON("43"), or(RECON("42"), or(RECON("41"), or(RECON("40"), or(RECON("39"), or(RECON("38"), or(RECON("37"), or(RECON("36"), or(RECON("35"), or(RECON("34"), or(RECON("33"), or(RECON("32"), or(RECON("31"), or(RECON("30"), or(RECON("29"), or(RECON("28"), or(RECON("27"), or(RECON("26"), or(RECON("25"), or(RECON("24"), or(RECON("23"), or(RECON("22"), or(RECON("21"), or(RECON("20"), or(RECON("19"), or(RECON("18"), or(RECON("17"), or(RECON("16"), or(RECON("15"), or(RECON("14"), or(RECON("13"), or(RECON("12"), or(RECON("11"), or(RECON("10"), or(RECON("9"), or(RECON("8"), or(RECON("7"), or(RECON("6"), or(RECON("5"), or(RECON("4"), or(RECON("3"), or(RECON("2"), or(RECON("1"), RECON("0")))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))) == out@1
+)
+
