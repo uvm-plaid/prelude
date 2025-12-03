@@ -37,8 +37,10 @@ class TermFactory(order: String) {
   def toTerm(constraint: Constraint): Term = constraint match
     case NotConstraint(e) => termManager.mkTerm(Kind.NOT, toTerm(e))
     case AndConstraint(e1, e2) => termManager.mkTerm(Kind.AND, toTerm(e1), toTerm(e2))
+    case OrConstraint(e1, e2) => termManager.mkTerm(Kind.OR, toTerm(e1), toTerm(e2))
+    case IffConstraint(e1, e2) => termManager.mkTerm(Kind.EQUAL, toTerm(e1), toTerm(e2))
     case ImpliesConstraint(e1, e2) => termManager.mkTerm(Kind.IMPLIES, toTerm(e1), toTerm(e2))
     case EqualConstraint(e1, e2) => termManager.mkTerm(Kind.EQUAL, toTerm(e1), toTerm(e2))
     case TrueConstraint() => termManager.mkTrue()
-    case other => throw Exception(s"Unsupported constraint $other")
+    case _ => throw Exception(s"Unsupported constraint $constraint")
 }

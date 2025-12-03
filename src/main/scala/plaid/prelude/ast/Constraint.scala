@@ -9,9 +9,11 @@ sealed trait Constraint extends Node {
    */
   def transform(f: Constraint => Option[Constraint]): Constraint = f(this).getOrElse(this match
     case AndConstraint(e1, e2) => AndConstraint(e1.transform(f), e2.transform(f))
+    case OrConstraint(e1, e2) => OrConstraint(e1.transform(f), e2.transform(f))
+    case IffConstraint(e1, e2) => IffConstraint(e1.transform(f), e2.transform(f))
     case ImpliesConstraint(e1, e2) => ImpliesConstraint(e1.transform(f), e2.transform(f))
     case NotConstraint(e) => NotConstraint(e.transform(f))
-    case other => f(other).getOrElse(other))
+    case _ => this)
 
   /**
    * Recursively inline any constraint function calls contained inside this
@@ -33,6 +35,8 @@ sealed trait Constraint extends Node {
 }
 
 case class AndConstraint(e1: Constraint, e2: Constraint) extends Constraint
+case class OrConstraint(e1: Constraint, e2: Constraint) extends Constraint
+case class IffConstraint(e1: Constraint, e2: Constraint) extends Constraint
 case class ImpliesConstraint(e1: Constraint, e2: Constraint) extends Constraint
 case class CallConstraint(fn: Identifier, parms: List[Expr]) extends Constraint
 case class EqualConstraint(e1: Expr, e2: Expr) extends Constraint

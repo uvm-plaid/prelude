@@ -143,7 +143,7 @@ class TermFactoryTest {
 
   /** Creates term for And constraint expression */
   @Test
-  def andConstraintTerm(): Unit = {
+  def andConstraintTerm(): Unit =
     val factory = TermFactory("7")
     val ast = AndConstraint(
       EqualConstraint(AtExpr(MessageExpr(Str("x")), Num(3)), AtExpr(RandomExpr(Str("y")), Num(5))),
@@ -152,7 +152,6 @@ class TermFactoryTest {
     val actual = factory.findModelSatisfying(term)
     val expected = Map("m_x_3" -> 1, "r_y_5" -> 1)
     assertEquals(mockModel(factory, expected), actual)
-  }
 
   /** Creates term for Not constraint */
   @Test

@@ -20,6 +20,9 @@ trait Node {
     case SecretExpr(e) => List(e)
     case TimesExpr(e1, e2) => List(e1, e2)
     case AndConstraint(e1, e2) => List(e1, e2)
+    case OrConstraint(e1, e2) => List(e1, e2)
+    case IffConstraint(e1, e2) => List(e1, e2)
+    case ImpliesConstraint(e1, e2) => List(e1, e2)
     case NotConstraint(e) => List(e)
     case CallConstraint(id, parms) => id :: parms
     case EqualConstraint(e1, e2) => List(e1, e2)
@@ -59,13 +62,16 @@ trait Node {
     case ConcatExpr(e1, e2) => s"${e1.prettyPrint()} ++ ${e2.prettyPrint()}"
     case TimesExpr(e1, e2) => s"(${e1.prettyPrint()} * ${e2.prettyPrint()})"
     case AndConstraint(e1, e2) => s"${e1.prettyPrint()} AND ${e2.prettyPrint()}"
+    case OrConstraint(e1, e2) => s"${e1.prettyPrint()} OR ${e2.prettyPrint()}"
+    case IffConstraint(e1, e2) => s"${e1.prettyPrint()} IFF ${e2.prettyPrint()}"
+    case ImpliesConstraint(e1, e2) => s"${e1.prettyPrint()} IMPLIES ${e2.prettyPrint()}"
     case NotConstraint(e) => s"NOT ${e.prettyPrint()}"
     case EqualConstraint(e1, e2) => s"${e1.prettyPrint()} == ${e2.prettyPrint()}"
     case TrueConstraint() => "T"
     case CallExpr(i, parms) => s"${i.prettyPrint()}(${parms.map(_.prettyPrint()).mkString(", ")})"
     case CallConstraint(id, parms) => s"${id.prettyPrint()}(${parms.map(_.prettyPrint()).mkString(", ")})"
     case CallCmd(id, parms) => s"${id.prettyPrint()}(${parms.map(_.prettyPrint()).mkString(", ")})"
-    case x => throw Exception(s"Unhandled node $x")
+    case _ => throw Exception(s"Unhandled node $this")
 }
 
 case class TypedIdentifier(y: Identifier, t: Type) extends Node

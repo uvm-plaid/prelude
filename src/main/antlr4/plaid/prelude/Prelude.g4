@@ -24,7 +24,10 @@ constraint
     : '(' constraint ')' #ParenConstraint
     | expr '==' expr #EqualConstraint
     | 'NOT' constraint #NotConstraint
+    | constraint 'IFF' constraint  #IffConstraint
     | constraint 'AND' constraint #AndConstraint //left associative
+    | constraint 'OR' constraint #OrConstraint
+    | constraint 'IMPLIES' constraint #ImpliesConstraint
     | ident '(' (expr (',' expr)*)? ')' #FunctionCallConstraint
     | 'T' #TrueConstraint
     ;

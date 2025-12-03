@@ -19,10 +19,13 @@ extension (trg: TermFactory)
     if (!result.isSat) return None
 
     val mod = Integer.parseInt(trg.sort.getFiniteFieldSize)
-    Some(trg.memories.map(m =>
+    val model = Some(trg.memories.map(m =>
       val value = solver.getValue(m.term)
       val finiteFieldValue = Integer.parseInt(value.getFiniteFieldValue)
       m.term -> Math.floorMod(finiteFieldValue, mod)).toMap)
+
+    println(s"Found a model: $model")
+    model
 
   /** E1 entails E2 if there is no model that satisfies (E1 AND not E2) */
   def entails(e1: Term, e2: Term): Boolean =

@@ -15,6 +15,18 @@ object ConstraintVisitor extends PreludeBaseVisitor[Constraint] {
     e1 = visit(ctx.constraint(0)),
     e2 = visit(ctx.constraint(1)))
 
+  override def visitImpliesConstraint(ctx: ImpliesConstraintContext): ImpliesConstraint = ImpliesConstraint(
+    e1 = visit(ctx.constraint(0)),
+    e2 = visit(ctx.constraint(1)))
+
+  override def visitOrConstraint(ctx: OrConstraintContext): OrConstraint = OrConstraint(
+    e1 = visit(ctx.constraint(0)),
+    e2 = visit(ctx.constraint(1)))
+
+  override def visitIffConstraint(ctx: IffConstraintContext): IffConstraint = IffConstraint(
+    e1 = visit(ctx.constraint(0)),
+    e2 = visit(ctx.constraint(1)))
+
   override def visitNotConstraint(ctx: NotConstraintContext) = NotConstraint(
     e = visit(ctx.constraint()))
 
