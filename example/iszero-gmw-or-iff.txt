@@ -177,7 +177,7 @@ andgmw("190", "189", "188");
 p["iszero"] := m["190"]@2;
 out@1 := (p["iszero"] + m["190"])@1
 }
-postcondition: (out@1 == 1 IFF (
+postcondition: (out@1 == 0 IFF (
   RECON("0") == 1 OR
   RECON("1") == 1 OR
   RECON("2") == 1 OR
