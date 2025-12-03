@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters.*
 
 object ExpressionVisitor extends PreludeBaseVisitor[Expr] {
 
-  override def visitParenPExpr(ctx: ParenPExprContext): Expr =
+  override def visitParenExpr(ctx: ParenExprContext): Expr =
     visit(ctx.expr())
 
   override def visitFunctionCallExpr(ctx: FunctionCallExprContext) = CallExpr(

@@ -36,7 +36,7 @@ expr
     | expr '*' expr #TimesExpr
     | expr '+' expr #PlusExpr
     | expr '++' expr #ConcatExpr
-    | '(' expr ')' #ParenPExpr
+    | '(' expr ')' #ParenExpr
     | 'let' ident '=' expr 'in' expr #LetExpr
     | ident '(' (expr (',' expr)*)? ')' #FunctionCallExpr
     | 's[' expr ']' #SecretExpr
