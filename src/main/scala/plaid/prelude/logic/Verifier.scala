@@ -2,7 +2,7 @@ package plaid.prelude.logic
 
 import io.github.cvc5.{Kind, Term}
 import plaid.prelude.ast.AndConstraint
-import plaid.prelude.cvc.{Memory, TermFactory}
+import plaid.prelude.cvc.TermFactory
 import plaid.prelude.logic.VerificationStatus.{FAIL, PASS, SKIP}
 
 extension (trg: TermFactory)
@@ -20,7 +20,6 @@ extension (trg: TermFactory)
     if (result.isNull || result.isUnknown) throw Exception("Failed to establish satisfiability or unsatisfiability")
     if (result.isUnsat) return None
 
-    val mod = Integer.parseInt(trg.sort.getFiniteFieldSize)
     Some(trg.memories.map(m =>
       val value = solver.getValue(m.term)
       m.name -> trg.valueOf(value)).toMap)
