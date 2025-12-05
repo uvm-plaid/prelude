@@ -17,7 +17,8 @@ extension (trg: TermFactory)
     solver.setOption("incremental", "false")
     solver.assertFormula(term)
     val result = solver.checkSat()
-    if (!result.isSat) return None
+    if (result.isNull || result.isUnknown) throw Exception("Failed to establish satisfiability or unsatisfiability")
+    if (result.isUnsat) return None
 
     val mod = Integer.parseInt(trg.sort.getFiniteFieldSize)
     Some(trg.memories.map(m =>
