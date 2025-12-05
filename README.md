@@ -104,8 +104,9 @@ using the binary field, try
 java -jar target/prelude.jar --field-size=2 example/gates-passive.txt
 ```
 
-The tool outputs a list of the functions in the source file. Each function is
-labeled
+The tool outputs a list of the functions in the source file. It may output
+additional logging along the way for diagnosis and tracking progress. Each
+function is labeled
 
 - **PASS** If the function satisfies the contract specified by its
 preconditions and postconditions
@@ -123,15 +124,24 @@ Further documentation about supported parameters is available via
 java -jar target/prelude.jar --help
 ```
 
+Because the JVM and cvc5 solver run in the same process, the heap may complete
+with the solver for process memory. For jobs that are memory intensive for cvc5
+we have found it helpful to fully allocate the heap on startup, and not permit
+it to grow larger.
+
+```
+java -Xms4g -Xmx4g -jar target/prelude.jar --field-size=2 example/gates-passive.txt
+```
+
 ## Project structure
 
 This prelude implementation is written in Scala, and adheres to the standard
 Maven project structure. Files and locations of note include
 
 - [/example](example) - A collection of example prelude programs
-- [/src/main/scala/plaid/prelude/App.scala](/src/main/scala/plaid/prelude/App.scala) - The entry point to the comand line application
+- [/src/main/scala/plaid/prelude/App.scala](/src/main/scala/plaid/prelude/App.scala) - The entry point to the command line application
 - [/src/main/antlr4/plaid/prelude/Prelude.g4](src/main/antlr4/plaid/prelude/Prelude.g4) - The ANTLR4 grammar for the prelude language
 - [/src/main/scala/plaid/prelude/ast](/src/main/scala/plaid/prelude/ast) - Simplified abstract syntax tree
-- [/src/main/scala/plaid/prelude/antlr](/src/main/scala/plaid/prelude/antlr) - Conversion from the ANTLR4 AST to the simpilified AST
+- [/src/main/scala/plaid/prelude/antlr](/src/main/scala/plaid/prelude/antlr) - Conversion from the ANTLR4 AST to the simplified AST
 - [/src/main/scala/plaid/prelude/logic](/src/main/scala/plaid/prelude/logic) - Contract checking
 - [/src/main/scala/plaid/prelude/cvc](/src/main/scala/plaid/prelude/cvc) - Bridge to the cvc5 solver
