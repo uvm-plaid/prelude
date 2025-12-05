@@ -43,6 +43,7 @@ class App extends Runnable {
     val termFactory = if fieldSize == "2" then BitVectorTermFactory() else FiniteFieldTermFactory(fieldSize)
     val statuses = contracts.map(_.verify(termFactory))
     val failures = statuses.count(x => x == FAIL)
+    println()
 
     contracts.zip(statuses).foreach((contract, status) =>
       println(s"$status ${contract.f.id.name}"))
