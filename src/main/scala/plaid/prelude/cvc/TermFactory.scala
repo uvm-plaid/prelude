@@ -5,15 +5,12 @@ import plaid.prelude.ast.*
 
 import scala.collection.mutable
 
-class TermFactory(order: String) {
-  private val DEFAULT_SIZE = 10
-
+abstract class TermFactory {
   val memories = mutable.HashSet[Memory]()
   val termManager = TermManager()
-  val sort: Sort = termManager.mkFiniteFieldSort(order, DEFAULT_SIZE)
-  private val minusOne: Term = termManager.mkFiniteFieldElem("-1", sort, DEFAULT_SIZE)
+  val sort: Sort
 
-  private def lookupOrCreate(expr: Expr, idx: Option[Int]): Term =
+  def lookupOrCreate(expr: Expr, idx: Option[Int]): Term =
     val name = CvcUtils.getCvcName(expr, idx)
     val memory = memories
       .find { _.name == name }
@@ -21,18 +18,9 @@ class TermFactory(order: String) {
     memories.add(memory)
     memory.term
 
-  def toTerm(expr: Expr, idx: Option[Int] = None): Term = expr match
-    case x: PublicExpr => lookupOrCreate(x, idx)
-    case x: AtExpr =>
-      if (idx.nonEmpty) throw Exception(s"Party index $idx already active")
-      toTerm(x.e1, Some(CvcUtils.toInt(x.e2)))
-    case Num(n) => termManager.mkFiniteFieldElem(n.toString, sort, DEFAULT_SIZE)
-    case PlusExpr(e1, e2) => termManager.mkTerm(Kind.FINITE_FIELD_ADD, toTerm(e1, idx), toTerm(e2, idx))
-    case TimesExpr(e1, e2) => termManager.mkTerm(Kind.FINITE_FIELD_MULT, toTerm(e1, idx), toTerm(e2, idx))
-    case MinusExpr(e) => termManager.mkTerm(Kind.FINITE_FIELD_MULT, toTerm(e, idx), minusOne)
-    case x: Expr =>
-      if (idx.isEmpty) throw Exception("A party index must be active")
-      lookupOrCreate(x, idx)
+  def createSolver(): Solver
+  def toTerm(expr: Expr, idx: Option[Int] = None): Term
+  def valueOf(variable: Term): String
 
   def toTerm(constraint: Constraint): Term = constraint match
     case NotConstraint(e) => termManager.mkTerm(Kind.NOT, toTerm(e))

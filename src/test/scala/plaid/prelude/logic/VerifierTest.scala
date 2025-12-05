@@ -4,7 +4,7 @@ import org.junit.Assert.{assertFalse, assertTrue}
 import org.junit.Test
 import plaid.prelude.antlr.Loader
 import plaid.prelude.ast.Constraint
-import plaid.prelude.cvc.TermFactory
+import plaid.prelude.cvc.FiniteFieldTermFactory
 
 class VerifierTest {
 
@@ -12,7 +12,7 @@ class VerifierTest {
     satisfiable(Loader.constraint(src))
 
   private def satisfiable(constraint: Constraint): Boolean =
-    val factory = TermFactory("7")
+    val factory = FiniteFieldTermFactory("7")
     val e = factory.toTerm(constraint)
     factory.satisfiable(e)
 
@@ -34,7 +34,7 @@ class VerifierTest {
   /** Everything entails a universally satisfied constraint. */
   @Test
   def everythingEntails(): Unit =
-    val factory = TermFactory("7")
+    val factory = FiniteFieldTermFactory("7")
     val t = factory.toTerm(Loader.constraint("T"))
     val f = factory.toTerm(Loader.constraint("NOT T"))
     assertTrue(factory.entails(t, t))
@@ -43,7 +43,7 @@ class VerifierTest {
   /** Nothing entails an unsatisfiable constraint except another unsatisfiable constraint. */
   @Test
   def nothingEntails(): Unit =
-    val factory = TermFactory("7")
+    val factory = FiniteFieldTermFactory("7")
     val t = factory.toTerm(Loader.constraint("T"))
     val f = factory.toTerm(Loader.constraint("NOT T"))
     assertFalse(factory.entails(t, f))

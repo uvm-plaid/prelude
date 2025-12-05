@@ -1,8 +1,8 @@
 package plaid.prelude.logic
 
-import io.github.cvc5.{Kind, Solver, Term}
+import io.github.cvc5.{Kind, Term}
 import plaid.prelude.ast.AndConstraint
-import plaid.prelude.cvc.TermFactory
+import plaid.prelude.cvc.{Memory, TermFactory}
 import plaid.prelude.logic.VerificationStatus.{FAIL, PASS, SKIP}
 
 extension (trg: TermFactory)
@@ -11,21 +11,18 @@ extension (trg: TermFactory)
     findModelSatisfying(e).nonEmpty
 
   /** Find a set of assignments that make a term true, if one exists. */
-  def findModelSatisfying(term: Term): Option[Map[Term, Int]] =
-    val solver = Solver(trg.termManager)
+  def findModelSatisfying(term: Term): Option[Map[String, String]] =
+    val solver = trg.createSolver()
     solver.setOption("produce-models", "true")
+    solver.setOption("incremental", "false")
     solver.assertFormula(term)
     val result = solver.checkSat()
     if (!result.isSat) return None
 
     val mod = Integer.parseInt(trg.sort.getFiniteFieldSize)
-    val model = Some(trg.memories.map(m =>
+    Some(trg.memories.map(m =>
       val value = solver.getValue(m.term)
-      val finiteFieldValue = Integer.parseInt(value.getFiniteFieldValue)
-      m.term -> Math.floorMod(finiteFieldValue, mod)).toMap)
-
-    println(s"Found a model: $model")
-    model
+      m.name -> trg.valueOf(value)).toMap)
 
   /** E1 entails E2 if there is no model that satisfies (E1 AND not E2) */
   def entails(e1: Term, e2: Term): Boolean =
@@ -42,7 +39,9 @@ enum VerificationStatus {
 extension (trg: Contract)
   /** Finds any entailments in a function contract that are false. */
   def verify(cvc: TermFactory): VerificationStatus =
+    println(s"* ${trg.f.id.name}")
     if !trg.check then return SKIP
+    println("  Generating fresh values...")
     val bindings = trg.f.typedVariables.map(x => x.y -> x.t.freshValue()).toMap
     val customPre = trg.customPre.expand(bindings = bindings)
     val customPost = trg.customPost.expand(bindings = bindings)
@@ -56,6 +55,13 @@ extension (trg: Contract)
 //      if constraintErrors.nonEmpty then
 //        throw Exception("Found errors in the constraints, bailing out.")
 
-    val pre = cvc.entails(cvc.toTerm(customPre), cvc.toTerm(defaultPre))
-    val post = cvc.entails(cvc.toTerm(AndConstraint(customPre, defaultPost)), cvc.toTerm(customPost))
+    println("  Converting to cvc5 terms...")
+    val customPreTerm = cvc.toTerm(customPre)
+    val defaultPreTerm = cvc.toTerm(defaultPre)
+    val andTerm = cvc.toTerm(AndConstraint(customPre, defaultPost))
+    val customPostTerm = cvc.toTerm(customPost)
+
+    println("  Solving...")
+    val pre = cvc.entails(customPreTerm, defaultPreTerm)
+    val post = cvc.entails(andTerm, customPostTerm)
     if pre && post then PASS else FAIL

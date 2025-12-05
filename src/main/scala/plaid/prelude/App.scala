@@ -5,7 +5,7 @@ import picocli.CommandLine.{Command, Option, Parameters}
 import plaid.prelude.antlr.Loader
 import plaid.prelude.ast.ListConstraintFuncExt.expandAll
 import plaid.prelude.ast.ListExprFuncExt.expandAll
-import plaid.prelude.cvc.TermFactory
+import plaid.prelude.cvc.{BitVectorTermFactory, FiniteFieldTermFactory, TermFactory}
 import plaid.prelude.logic.VerificationStatus.FAIL
 import plaid.prelude.logic.{contracts, verify}
 
@@ -33,10 +33,15 @@ class App extends Runnable {
   override def run(): Unit =
     val src = Files.readString(File(path).toPath)
     val ast = Loader.program(src)
+    println("Expanding expression functions...")
     val exprFns = ast.exprFuncs.expandAll()
+    println("Expanding constraint functions...")
     val constraintFns = ast.constraintFuncs.expandAll(exprFns)
+    println("Generating contracts...")
     val contracts = ast.cmdFuncs.contracts(exprFns, constraintFns)
-    val statuses = contracts.map(_.verify(TermFactory(fieldSize)))
+    println("Verifying with cvc5...")
+    val termFactory = if fieldSize == "2" then BitVectorTermFactory() else FiniteFieldTermFactory(fieldSize)
+    val statuses = contracts.map(_.verify(termFactory))
     val failures = statuses.count(x => x == FAIL)
 
     contracts.zip(statuses).foreach((contract, status) =>
