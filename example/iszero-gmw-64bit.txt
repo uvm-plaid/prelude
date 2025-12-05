@@ -1,0 +1,243 @@
+exprfunctions:
+
+not(x){ x + 1 }
+
+mux4(s1, s2, b1, b2, b3, b4){
+  (not(s1) * not(s2) * b1) +  (not(s1) * (s2) * b2) + ((s1) * not(s2) * b3) + ((s1) * (s2) * b4) 
+}
+
+RECON(x) { (m[x]@1 + m[x]@2) }
+
+andtablegmw(x, y, z) {
+  let r11 = (r[z] + (m[x] + 1) * (m[y] + 1)) in
+  let r10 = (r[z] + (m[x] + 1) * (m[y] + 0)) in
+  let r01 = (r[z] + (m[x] + 0) * (m[y] + 1)) in
+  let r00 = (r[z] + (m[x] + 0) * (m[y] + 0)) in
+  { row1 = r11; row2 = r10; row3 = r01; row4 = r00 }
+}
+
+cmdfunctions:
+
+OT4(x:string,c1:string,c2:string,b1:string,b2:string,b3:string,b4:string,i1:cid,i2:cid)
+postcondition: ( m[x]@i1 == mux4(m[c1]@i1, m[c2]@i1, m[b1]@i2, m[b2]@i2, m[b3]@i2, m[b4]@i2) )
+
+andgmw(z:string, x:string, y:string) {
+  let table = andtablegmw(x,y,z) in
+  m[z++"r1"]@1 := table.row1@1;
+  m[z++"r2"]@1 := table.row2@1;
+  m[z++"r3"]@1 := table.row3@1;
+  m[z++"r4"]@1 := table.row4@1;
+  OT4(z, x, y, z++"r4", z++"r3", z++"r2", z++"r1", 2, 1);
+  m[z]@1 := r[z]@1
+}
+postcondition: ( RECON(z) == RECON(x) * RECON(y) )
+
+notgmw(z:string, x:string) {
+  m[z]@1 := m[x]@1;
+  m[z]@2 := not(m[x])@2
+}
+postcondition: ( RECON(z) == not(RECON(x)) )
+
+xorgmw(z:string, x:string, y:string) {
+  m[z]@1 := (m[x] + m[y])@1;
+  m[z]@2 := (m[x] + m[y])@2
+}
+postcondition: ( RECON(z) == RECON(x) + RECON(y) )
+
+main()
+{
+notgmw("65", "63");
+notgmw("64", "60");
+andgmw("69", "65", "64");
+notgmw("67", "62");
+notgmw("66", "61");
+andgmw("68", "67", "66");
+andgmw("77", "69", "68");
+notgmw("71", "51");
+notgmw("70", "48");
+andgmw("75", "71", "70");
+notgmw("73", "50");
+notgmw("72", "49");
+andgmw("74", "73", "72");
+andgmw("76", "75", "74");
+andgmw("93", "77", "76");
+notgmw("79", "59");
+notgmw("78", "56");
+andgmw("83", "79", "78");
+notgmw("81", "58");
+notgmw("80", "57");
+andgmw("82", "81", "80");
+andgmw("91", "83", "82");
+notgmw("85", "55");
+notgmw("84", "52");
+andgmw("89", "85", "84");
+notgmw("87", "54");
+notgmw("86", "53");
+andgmw("88", "87", "86");
+andgmw("90", "89", "88");
+andgmw("92", "91", "90");
+andgmw("125", "93", "92");
+notgmw("95", "15");
+notgmw("94", "12");
+andgmw("99", "95", "94");
+notgmw("97", "14");
+notgmw("96", "13");
+andgmw("98", "97", "96");
+andgmw("107", "99", "98");
+notgmw("101", "3");
+notgmw("100", "0");
+andgmw("105", "101", "100");
+notgmw("103", "2");
+notgmw("102", "1");
+andgmw("104", "103", "102");
+andgmw("106", "105", "104");
+andgmw("123", "107", "106");
+notgmw("109", "11");
+notgmw("108", "8");
+andgmw("113", "109", "108");
+notgmw("111", "10");
+notgmw("110", "9");
+andgmw("112", "111", "110");
+andgmw("121", "113", "112");
+notgmw("115", "7");
+notgmw("114", "4");
+andgmw("119", "115", "114");
+notgmw("117", "6");
+notgmw("116", "5");
+andgmw("118", "117", "116");
+andgmw("120", "119", "118");
+andgmw("122", "121", "120");
+andgmw("124", "123", "122");
+andgmw("189", "125", "124");
+notgmw("127", "47");
+notgmw("126", "44");
+andgmw("131", "127", "126");
+notgmw("129", "46");
+notgmw("128", "45");
+andgmw("130", "129", "128");
+andgmw("139", "131", "130");
+notgmw("133", "35");
+notgmw("132", "32");
+andgmw("137", "133", "132");
+notgmw("135", "34");
+notgmw("134", "33");
+andgmw("136", "135", "134");
+andgmw("138", "137", "136");
+andgmw("155", "139", "138");
+notgmw("141", "43");
+notgmw("140", "40");
+andgmw("145", "141", "140");
+notgmw("143", "42");
+notgmw("142", "41");
+andgmw("144", "143", "142");
+andgmw("153", "145", "144");
+notgmw("147", "39");
+notgmw("146", "36");
+andgmw("151", "147", "146");
+notgmw("149", "38");
+notgmw("148", "37");
+andgmw("150", "149", "148");
+andgmw("152", "151", "150");
+andgmw("154", "153", "152");
+andgmw("187", "155", "154");
+notgmw("157", "31");
+notgmw("156", "28");
+andgmw("161", "157", "156");
+notgmw("159", "30");
+notgmw("158", "29");
+andgmw("160", "159", "158");
+andgmw("169", "161", "160");
+notgmw("163", "19");
+notgmw("162", "16");
+andgmw("167", "163", "162");
+notgmw("165", "18");
+notgmw("164", "17");
+andgmw("166", "165", "164");
+andgmw("168", "167", "166");
+andgmw("185", "169", "168");
+notgmw("171", "27");
+notgmw("170", "24");
+andgmw("175", "171", "170");
+notgmw("173", "26");
+notgmw("172", "25");
+andgmw("174", "173", "172");
+andgmw("183", "175", "174");
+notgmw("177", "23");
+notgmw("176", "20");
+andgmw("181", "177", "176");
+notgmw("179", "22");
+notgmw("178", "21");
+andgmw("180", "179", "178");
+andgmw("182", "181", "180");
+andgmw("184", "183", "182");
+andgmw("186", "185", "184");
+andgmw("188", "187", "186");
+andgmw("190", "189", "188");
+p["iszero"] := m["190"]@2;
+out@1 := (p["iszero"] + m["190"])@1
+}
+postcondition: (out@1 == 1 IFF (
+  RECON("0") == 0 AND
+  RECON("1") == 0 AND
+  RECON("2") == 0 AND
+  RECON("3") == 0 AND
+  RECON("4") == 0 AND
+  RECON("5") == 0 AND
+  RECON("6") == 0 AND
+  RECON("7") == 0 AND
+  RECON("8") == 0 AND
+  RECON("9") == 0 AND
+  RECON("10") == 0 AND
+  RECON("11") == 0 AND
+  RECON("12") == 0 AND
+  RECON("13") == 0 AND
+  RECON("14") == 0 AND
+  RECON("15") == 0 AND
+  RECON("16") == 0 AND
+  RECON("17") == 0 AND
+  RECON("18") == 0 AND
+  RECON("19") == 0 AND
+  RECON("20") == 0 AND
+  RECON("21") == 0 AND
+  RECON("22") == 0 AND
+  RECON("23") == 0 AND
+  RECON("24") == 0 AND
+  RECON("25") == 0 AND
+  RECON("26") == 0 AND
+  RECON("27") == 0 AND
+  RECON("28") == 0 AND
+  RECON("29") == 0 AND
+  RECON("30") == 0 AND
+  RECON("31") == 0 AND
+  RECON("32") == 0 AND
+  RECON("33") == 0 AND
+  RECON("34") == 0 AND
+  RECON("35") == 0 AND
+  RECON("36") == 0 AND
+  RECON("37") == 0 AND
+  RECON("38") == 0 AND
+  RECON("39") == 0 AND
+  RECON("40") == 0 AND
+  RECON("41") == 0 AND
+  RECON("42") == 0 AND
+  RECON("43") == 0 AND
+  RECON("44") == 0 AND
+  RECON("45") == 0 AND
+  RECON("46") == 0 AND
+  RECON("47") == 0 AND
+  RECON("48") == 0 AND
+  RECON("49") == 0 AND
+  RECON("50") == 0 AND
+  RECON("51") == 0 AND
+  RECON("52") == 0 AND
+  RECON("53") == 0 AND
+  RECON("54") == 0 AND
+  RECON("55") == 0 AND
+  RECON("56") == 0 AND
+  RECON("57") == 0 AND
+  RECON("58") == 0 AND
+  RECON("59") == 0 AND
+  RECON("60") == 0 AND
+  RECON("61") == 0 AND
+  RECON("62") == 0 AND
+  RECON("63") == 0))
