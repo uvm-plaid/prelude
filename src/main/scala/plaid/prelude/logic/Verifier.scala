@@ -20,9 +20,10 @@ extension (trg: TermFactory)
     if (result.isNull || result.isUnknown) throw Exception("Failed to establish satisfiability or unsatisfiability")
     if (result.isUnsat) return None
 
-    Some(trg.memories.map(m =>
+    val model = Some(trg.memories.map(m =>
       val value = solver.getValue(m.term)
       m.name -> trg.valueOf(value)).toMap)
+    model
 
   /** E1 entails E2 if there is no model that satisfies (E1 AND not E2) */
   def entails(e1: Term, e2: Term): Boolean =
@@ -61,7 +62,8 @@ extension (trg: Contract)
     val andTerm = cvc.toTerm(AndConstraint(customPre, defaultPost))
     val customPostTerm = cvc.toTerm(customPost)
 
-    println("  Solving...")
+    println("  Solving pre-check...")
     val pre = cvc.entails(customPreTerm, defaultPreTerm)
+    println("  Solving post-check...")
     val post = cvc.entails(andTerm, customPostTerm)
     if pre && post then PASS else FAIL

@@ -7,6 +7,12 @@ import plaid.prelude.ast.*
 
 import scala.jdk.CollectionConverters.*
 
+class ParseErrorListener extends BaseErrorListener {
+  override def syntaxError(recognizer: Recognizer[_, _], offendingSymbol: Any, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException): Unit =
+    println("Bailing due to syntax errors")
+    System.exit(1)
+}
+
 /** Support for converting Prelude source code into an abstract syntax tree. */
 object Loader {
 
@@ -17,6 +23,7 @@ object Loader {
     val tokens = CommonTokenStream(lexer)
     val parser = PreludeParser(tokens)
     parser.setBuildParseTree(true)
+    parser.addErrorListener(ParseErrorListener())
     parser
 
   /** Converts an ANTLR4 context into an abstract syntax tree for a type. */
