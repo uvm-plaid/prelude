@@ -58,7 +58,7 @@ sudo apt install cmake m4
 git clone https://github.com/cvc5/cvc5
 
 # Switch to a version known to work with Prelude
-git checkout cvc5-1.2.0
+git checkout cvc5-1.3.1
 
 # Configure the build with some extensions
 cd cvc5
@@ -145,3 +145,18 @@ Maven project structure. Files and locations of note include
 - [/src/main/scala/plaid/prelude/antlr](/src/main/scala/plaid/prelude/antlr) - Conversion from the ANTLR4 AST to the simplified AST
 - [/src/main/scala/plaid/prelude/logic](/src/main/scala/plaid/prelude/logic) - Contract checking
 - [/src/main/scala/plaid/prelude/cvc](/src/main/scala/plaid/prelude/cvc) - Bridge to the cvc5 solver
+
+<!--
+## MacOS installation with Chris
+```
+brew install openjdk
+```
+
+```
+JAVA_HOME=/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home
+```
+
+```
+brew install cmake
+```
+-->

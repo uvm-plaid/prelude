@@ -8,7 +8,7 @@ import plaid.prelude.ast.*
 import scala.jdk.CollectionConverters.*
 
 class ParseErrorListener extends BaseErrorListener {
-  override def syntaxError(recognizer: Recognizer[_, _], offendingSymbol: Any, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException): Unit =
+  override def syntaxError(recognizer: Recognizer[?, ?], offendingSymbol: Any, line: Int, charPositionInLine: Int, msg: String, e: RecognitionException): Unit =
     println("Bailing due to syntax errors")
     System.exit(1)
 }
