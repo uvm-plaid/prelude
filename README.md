@@ -72,7 +72,7 @@ make
 sudo make install
 ```
 
-This should put cvc5 binaries and libraries libraries in `/usr/local`.
+This should put cvc5 binaries and libraries in `/usr/local`.
 
 ### Prelude
 
