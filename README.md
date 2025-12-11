@@ -62,7 +62,7 @@ git checkout cvc5-1.3.1
 
 # Configure the build with some extensions
 cd cvc5
-./configure.sh production --auto-download --cocoa --gpl --java-bindings
+./configure.sh production --auto-download --cocoa --gpl --java-bindings --python-bindings
 
 # Build cvc5 (takes a long time)
 cd build
