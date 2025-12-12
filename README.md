@@ -31,7 +31,7 @@ have a java installation, chances are you can just use that.
 
 ```
 # Install java virtual machine
-sudo apt install openjdk-25-jdk
+sudo apt install openjdk-21-jdk
 
 # Tell make where java is (might differ by architecture?)
 export JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64
