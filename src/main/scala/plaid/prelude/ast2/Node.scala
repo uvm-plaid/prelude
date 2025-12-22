@@ -29,9 +29,9 @@ enum Node[K <: Kind]:
   case AtExpr(e1: Expr, e2: Expr) extends Expr
   case ConcatExpr(e1: Expr, e2: Expr) extends Expr
   case FieldExpr(elements: Map[Id, Expr]) extends Expr
-  case SelectExpr(e: Expr, l: Id) extends Expr
+  case SelectExpr(e: Expr, id: Id) extends Expr
   case CallExpr(id: Id, parms: List[Expr]) extends Expr
-  case LetExpr(y: Id, e1: Expr, e2: Expr) extends Expr
+  case LetExpr(id: Id, e1: Expr, e2: Expr) extends Expr
   case MessageExpr(e: Expr) extends Expr
   case RandomExpr(e: Expr) extends Expr
   case MinusExpr(e: Expr) extends Expr
@@ -46,11 +46,11 @@ enum Node[K <: Kind]:
   case AssertCmd(e1: Expr, e2: Expr, e3: Expr) extends Cmd
   case AssignCmd(e1: Expr, e2: Expr) extends Cmd
   case CallCmd(id: Id, parms: List[Expr]) extends Cmd
-  case LetCmd(y: Id, e: Expr, c: List[Cmd]) extends Cmd
+  case LetCmd(id: Id, e: Expr, c: List[Cmd]) extends Cmd
   case PartyIndexType() extends Type
   case RecordType(elements: Map[Id, Type]) extends Type
   case StringType() extends Type
   case CondFunc(id: Id, parms: List[Id], body: Cond) extends Func
   case ExprFunc(id: Id, parms: List[Id], body: Expr) extends Func
   case CmdFunc(id: Id, parms: List[(Id, Type)], body: List[Cmd], pre: Option[Cond], post: Option[Cond]) extends Func
-  case Program(fns: List[Func])
+  case Program(fns: List[Func]) extends Node
