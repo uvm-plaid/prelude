@@ -94,6 +94,14 @@ cd prelude
 mvn clean package
 ```
 
+Some users experienced that MacOS does not respect `DYLD_LIBRARY_PATH`. This
+causes the unit tests to be unable to run during the build. MacOS users who
+encounter this can still produce the build artifact by skipping the unit tests.
+
+```
+mvn -DskipTests clean package
+```
+
 ## Running examples
 
 The tool accepts as parameters a field size with the switch `--field-size=x` or
@@ -102,6 +110,13 @@ using the binary field, try
 
 ```
 java -jar target/prelude.jar --field-size=2 example/gates-passive.txt
+```
+
+MacOS users having problems with `DYLD_LIBRARY_PATH` may need to explicitly
+specify where the cvc5 system libraries live.
+
+```
+java -Djava.library.path=/usr/local/lib -jar target/prelude.jar --field-size=2 example/gates-passive.txt
 ```
 
 The tool outputs a list of the functions in the source file. It may output
