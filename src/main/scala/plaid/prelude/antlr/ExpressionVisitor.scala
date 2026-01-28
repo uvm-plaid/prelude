@@ -11,6 +11,14 @@ object ExpressionVisitor extends PreludeBaseVisitor[Expr] {
   override def visitVectorExpr(ctx: VectorExprContext) = VectorExpr(
     es = ctx.expr().asScala.map(visit).toList)
 
+  override def visitBVConcatExpr(ctx: BVConcatExprContext) = BVConcatExpr(
+    e1 = visit(ctx.expr(0)),
+    e2 = visit(ctx.expr(1)))
+
+  override def visitBVAddExpr(ctx: BVAddExprContext) = BVAddExpr(
+    e1 = visit(ctx.expr(0)),
+    e2 = visit(ctx.expr(1)))
+
   override def visitParenExpr(ctx: ParenExprContext): Expr =
     visit(ctx.expr())
 

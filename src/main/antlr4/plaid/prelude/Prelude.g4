@@ -41,6 +41,8 @@ expr
     | expr '++' expr #ConcatExpr
     | '(' expr ')' #ParenExpr
     | 'let' ident '=' expr 'in' expr #LetExpr
+    | 'BVAdd' '(' expr ',' expr ')' #BVAddExpr
+    | 'BVConcat' '(' expr ',' expr ')' #BVConcatExpr
     | ident '(' (expr (',' expr)*)? ')' #FunctionCallExpr
     | '|' (expr (',' expr)*)? '|' #VectorExpr
     | 's[' expr ']' #SecretExpr

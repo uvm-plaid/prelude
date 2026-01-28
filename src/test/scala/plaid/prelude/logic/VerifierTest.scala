@@ -57,13 +57,21 @@ class VerifierTest {
     assertFalse(factory.entails(t, f))
     assertTrue(factory.entails(f, f))
 
-  /** Bit vector constraints are satisfiable. */
+  /** Bit vectors can participate in constraints. */
   @Test
   def bitVector(): Unit =
     assertTrue(satisfiableBV("|out@1, out@2| == |1, 0|"))
-
-  /** Contradictory bit vector constraints are unsatisfiable. */
-  @Test
-  def bitVectorContradictory(): Unit =
     assertFalse(satisfiableBV("|out@1, out@2| == |1, 0| AND out@1 == 0"))
+
+  /** Bit vectors can be concatenated with BVConcat. */
+  @Test
+  def bitVectorConcat(): Unit =
+    assertTrue(satisfiableBV("BVConcat(|out@1, out@2|, |out@3, out@4|) == |1, 0, 0, 1|"))
+    assertFalse(satisfiableBV("BVConcat(|out@1, out@2|, |out@1, out@4|) == |1, 0, 0, 1|"))
+
+  /** Bit vectors can be added with BVAdd. */
+  @Test
+  def bitVectorAdd(): Unit =
+    assertTrue(satisfiableBV("BVAdd(|0, out@1|, |0, out@1|) == |1, 0|"))
+    assertFalse(satisfiableBV("BVAdd(|0, out@1|, |0, out@1|) == |1, 1|"))
 }

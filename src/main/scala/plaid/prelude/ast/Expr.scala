@@ -9,6 +9,8 @@ sealed trait Expr extends Node {
    */
   def transform(f: Expr => Option[Expr]): Expr = f(this).getOrElse(this match
     case VectorExpr(es) => VectorExpr(es.map(_.transform(f)))
+    case BVAddExpr(e1, e2) => BVAddExpr(e1.transform(f), e2.transform(f))
+    case BVConcatExpr(e1, e2) => BVConcatExpr(e1.transform(f), e2.transform(f))
     case AtExpr(e1, e2) => AtExpr(e1.transform(f), e2.transform(f))
     case ConcatExpr(e1, e2) => ConcatExpr(e1.transform(f), e2.transform(f))
     case FieldExpr(elements) => FieldExpr(elements.view.mapValues(_.transform(f)).toMap)
@@ -67,6 +69,8 @@ sealed trait Expr extends Node {
 }
 
 case class VectorExpr(es: List[Expr]) extends Expr
+case class BVAddExpr(e1: Expr, e2: Expr) extends Expr
+case class BVConcatExpr(e1: Expr, e2: Expr) extends Expr
 case class AtExpr(e1: Expr, e2: Expr) extends Expr
 case class ConcatExpr(e1: Expr, e2: Expr) extends Expr
 case class FieldExpr(elements: Map[Identifier, Expr]) extends Expr
