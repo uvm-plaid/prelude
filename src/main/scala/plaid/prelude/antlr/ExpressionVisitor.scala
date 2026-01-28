@@ -8,6 +8,9 @@ import scala.jdk.CollectionConverters.*
 
 object ExpressionVisitor extends PreludeBaseVisitor[Expr] {
 
+  override def visitVectorExpr(ctx: VectorExprContext) = VectorExpr(
+    es = ctx.expr().asScala.map(visit).toList)
+
   override def visitParenExpr(ctx: ParenExprContext): Expr =
     visit(ctx.expr())
 

@@ -1,7 +1,7 @@
 package plaid.prelude.cvc
 
 import io.github.cvc5.{Kind, Solver, Sort, Term}
-import plaid.prelude.ast.{AtExpr, Expr, MinusExpr, Num, PlusExpr, PublicExpr, TimesExpr}
+import plaid.prelude.ast.{AtExpr, Expr, MinusExpr, Num, PlusExpr, PublicExpr, TimesExpr, VectorExpr}
 
 class BitVectorTermFactory extends TermFactory {
 
@@ -15,6 +15,7 @@ class BitVectorTermFactory extends TermFactory {
     result
 
   override def toTerm(expr: Expr, idx: Option[Int] = None): Term = expr match
+    case VectorExpr(es) => termManager.mkTerm(Kind.BITVECTOR_CONCAT, es.map(toTerm(_)).toArray)
     case x: PublicExpr => lookupOrCreate(x, idx)
     case x: AtExpr =>
       if (idx.nonEmpty) throw Exception(s"Party index $idx already active")

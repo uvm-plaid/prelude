@@ -42,6 +42,7 @@ expr
     | '(' expr ')' #ParenExpr
     | 'let' ident '=' expr 'in' expr #LetExpr
     | ident '(' (expr (',' expr)*)? ')' #FunctionCallExpr
+    | '|' (expr (',' expr)*)? '|' #VectorExpr
     | 's[' expr ']' #SecretExpr
     | 'r[' expr ']' #RandomExpr
     | 'm[' expr ']' #MessageExpr

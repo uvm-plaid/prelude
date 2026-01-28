@@ -3,8 +3,7 @@ package plaid.prelude.logic
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import plaid.prelude.antlr.Loader
-import plaid.prelude.ast.{AndConstraint, AtExpr, EqualConstraint, Num, OutputExpr, Str, TrueConstraint}
-import plaid.prelude.logic.contract
+import plaid.prelude.ast.{AtExpr, EqualConstraint, Num, OutputExpr, Str, TrueConstraint}
 
 class ContractTest {
 

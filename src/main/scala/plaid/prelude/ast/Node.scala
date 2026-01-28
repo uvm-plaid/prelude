@@ -6,6 +6,7 @@ trait Node {
    * Collect all the children of this node.
    */
   def children(): Iterable[Node] = this match
+    case VectorExpr(es) => es
     case AtExpr(e1, e2) => List(e1, e2)
     case ConcatExpr(e1, e2) => List(e1, e2)
     case FieldExpr(elements) => elements.flatten((x, y) => List(x, y))
@@ -45,6 +46,7 @@ trait Node {
    * Provides a human-readable string representation of an AST node and its decedents.
    */
   def prettyPrint(): String = this match
+    case VectorExpr(es) => s"|${es.map(_.prettyPrint()).mkString(", ")}|"
     case AssertCmd(e1, e2, i) => s"assert (${e1.prettyPrint()} = ${e2.prettyPrint()})@${i.prettyPrint()}"
     case AssignCmd(e1, e2) => s"${e1.prettyPrint()} := ${e2.prettyPrint()}"
     case AtExpr(e, i) => s"${e.prettyPrint()}@${i.prettyPrint()}"
