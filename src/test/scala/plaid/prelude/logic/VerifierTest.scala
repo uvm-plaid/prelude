@@ -74,4 +74,17 @@ class VerifierTest {
   def bitVectorAdd(): Unit =
     assertTrue(satisfiableBV("BVAdd(|0, out@1|, |0, out@1|) == |1, 0|"))
     assertFalse(satisfiableBV("BVAdd(|0, out@1|, |0, out@1|) == |1, 1|"))
+
+  /** What is the behavior of cvc5 bit vectors wrt addition overflow? */
+  @Test
+  def bitVectorOverflow(): Unit =
+    // Sanity check: We can assert things without predicate variables
+    assertTrue(satisfiableBV("BVAdd(|1, 0|, |0, 1|) == |1, 1|"))
+    assertFalse(satisfiableBV("BVAdd(|1, 0|, |0, 1|) == |1, 0|"))
+    // Go over by 1
+    assertTrue(satisfiableBV("BVAdd(|1, 1|, |0, 1|) == |0, 0|"))
+    // Go over by 2
+    assertTrue(satisfiableBV("BVAdd(|1, 1|, |1, 0|) == |0, 1|"))
+    // Go over by 3
+    assertTrue(satisfiableBV("BVAdd(|1, 1|, |1, 1|) == |1, 0|"))
 }
