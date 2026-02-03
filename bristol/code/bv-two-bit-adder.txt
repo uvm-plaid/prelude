@@ -1,0 +1,88 @@
+exprfunctions:
+
+RECON(x) { (m[x]@1 + m[x]@2) }
+
+andtablegmw(x, y, z) {
+   let r11 = (r[z] + (m[x] + 1) * (m[y] + 1)) in
+   let r10 = (r[z] + (m[x] + 1) * (m[y] + 0)) in
+   let r01 = (r[z] + (m[x] + 0) * (m[y] + 1)) in
+   let r00 = (r[z] + (m[x] + 0) * (m[y] + 0)) in
+   { row1 = r11; row2 = r10; row3 = r01; row4 = r00 }
+}
+
+not(x){ x + 1 }
+
+cmdfunctions:
+encodegmw(n:string, i1:cid, i2:cid) {
+   m[n]@i2 := (s[n] + r[n])@i1;
+   m[n]@i1 := r[n]@i1
+}
+// difference from encodegmw? why do we concat some value "s"
+sshare(x:string, i1:cid, i2:cid) {
+   m[x++"s"]@i2 := (s[x] + -r[x])@i1;
+   m[x++"s"]@i1 := r[x]@i1
+}
+
+_open(x:string, i1:cid, i2:cid){
+    m[x++"exts"]@i1 := m[x++"s"]@i2;
+    m[x]@i1 := (m[x++"exts"] + m[x++"s"])@i1
+}
+
+open(x:string) { _open(x,1,2); _open(x,2,1) }
+
+
+andgmw(z:string, x:string, y:string) {
+   let table = andtablegmw(x,y,z) in
+   m[z]@2 := OT4(m[x], m[y], table, 2, 1);
+   m[z]@1 := r[z]@1
+}
+postcondition: ( m[z]@1 + m[z]@2 == (m[x]@1 + m[x]@2) * (m[y]@1 + m[y]@2) )
+//andgmw(z:string, x:string, y:string) {
+//   let table = andtablegmw(x,y,z) in
+//   m[z]@2 := OT4((m[x], m[y])@2, table.row4, table.row3, table.row2, table.row1)@1;
+//   m[z]@1 := r[z]@1
+//}
+//postcondition: ( RECON(z) == RECON(x) * RECON(y))
+
+notgmw(z:string, x:string) {
+   m[z]@2 := m[x]@2;
+   m[z]@1 := (m[x]@1 + 1)
+}
+postcondition: ( m[z]@1 + m[z]@2 == (1 + (m[x]@1 + m[x]@2)) )
+
+// Already existed in other example, I just added post
+xorgmw(z:string, x:string, y:string) {
+   m[z]@1 := (m[x] + m[y])@1; m[z]@2 := (m[x] + m[y])@2
+}
+postcondition: ( m[z]@1 + m[z]@2 == (m[x]@1 + m[x]@2) + (m[y]@1 + m[y]@2) )
+
+// here is the updated adder
+adder(x1:string, x2:string, y1:string, y2:string) {
+   encodegmw(x1,1,2);
+   encodegmw(x2,1,2);
+   encodegmw(y1,2,1);
+   encodegmw(y2,2,1);
+   //sshare("x1",1,2);
+   //sshare("x2",1,2);
+   //sshare("y1",2,1);
+   //sshare("y2",2,1);
+
+   xorgmw("out1","x1","y1"); // Bit 0
+   andgmw("g1","x1","y1");
+   xorgmw("g2","x2","y2");
+   xorgmw("out2","g2","g1"); // Bit 1
+
+   //decodegmw("out1");
+   //decodegmw("out2")
+   open("out1");
+   open("out2")
+}
+postcondition: (
+   BVConcat(out["out1"]@1, out["out2"]@1) == BVAdd(BVConcat(s[x1]@1, s[x2]@1), BVConcat(s[y1]@2, s[y2]@2)) AND
+   BVConcat(out["out1"]@2, out["out2"]@2) == BVAdd(BVConcat(s[x1]@1, s[x2]@1), BVConcat(s[y1]@2, s[y2]@2))
+)
+
+//main() {
+  // adder("x1", "x2", "y1", "y2")
+//}
+
