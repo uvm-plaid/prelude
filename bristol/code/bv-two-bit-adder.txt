@@ -37,11 +37,10 @@ xorgmw(z:string, x:string, y:string) {
 } 
 postcondition: (RECON(z) == RECON(x) + RECON(y))
 
-precondition: (RECON("x1") == 0 AND RECON("x2") == 1 AND RECON("y1") == 1 AND RECON("y2") == 0)
 main() {
    xorgmw("z1", "x1", "y1"); // Bit 0 (least significant)
    andgmw("g1", "x1", "y1");
    xorgmw("g2", "x2", "y2");
    xorgmw("z2", "g2", "g1") // Bit 1 (most significant)
 } // want to clarify if z2 should be before z1 (the adder I used has least significant bit be z1)
-postcondition: (|RECON("z2"), RECON("z1")| == BVAdd(|RECON("x1"), RECON("x2")|, |RECON("y1"), RECON("y2")|))
+postcondition: (|RECON("z2"), RECON("z1")| == BVAdd(|RECON("x2"), RECON("x1")|, |RECON("y2"), RECON("y1")|))
