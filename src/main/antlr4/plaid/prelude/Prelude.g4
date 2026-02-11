@@ -42,6 +42,7 @@ expr
     | '(' expr ')' #ParenExpr
     | 'let' ident '=' expr 'in' expr #LetExpr
     | 'BVAdd' '(' expr ',' expr ')' #BVAddExpr
+    | 'BVMult' '(' expr ',' expr ')' #BVMultExpr
     | 'BVConcat' '(' expr ',' expr ')' #BVConcatExpr
     | ident '(' (expr (',' expr)*)? ')' #FunctionCallExpr
     | '|' (expr (',' expr)*)? '|' #VectorExpr
