@@ -41,12 +41,15 @@ class App extends Runnable {
     val contracts = ast.cmdFuncs.contracts(exprFns, constraintFns)
     println("Verifying with cvc5...")
     val termFactory = if fieldSize == "bv" then BitVectorTermFactory() else FiniteFieldTermFactory(fieldSize)
+    val startTime = System.currentTimeMillis()
     val statuses = contracts.map(_.verify(termFactory))
+    val endTime = System.currentTimeMillis()
     val failures = statuses.count(x => x == FAIL)
     println()
 
     contracts.zip(statuses).foreach((contract, status) =>
       println(s"$status ${contract.f.id.name}"))
 
-    println(s"$failures verification failures")
+    val solveTime = endTime - startTime
+    println(s"$failures verification failures, cvc5 solve time was ${solveTime}ms")
 }
