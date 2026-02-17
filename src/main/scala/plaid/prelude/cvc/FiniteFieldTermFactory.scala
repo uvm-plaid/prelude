@@ -1,7 +1,7 @@
 package plaid.prelude.cvc
 
 import io.github.cvc5.{Kind, Solver, Sort, Term}
-import plaid.prelude.ast.{AtExpr, BVAddExpr, BVConcatExpr, BVMultExpr, Expr, MinusExpr, Num, PlusExpr, PublicExpr, TimesExpr, VectorExpr}
+import plaid.prelude.ast.{AtExpr, BVAddExpr, BVSubExpr, BVConcatExpr, BVMultExpr, Expr, MinusExpr, Num, PlusExpr, PublicExpr, TimesExpr, VectorExpr}
 
 class FiniteFieldTermFactory(order: String) extends TermFactory {
   private val DEFAULT_SIZE = 10
@@ -13,6 +13,7 @@ class FiniteFieldTermFactory(order: String) extends TermFactory {
   override def toTerm(expr: Expr, idx: Option[Int] = None): Term = expr match
     case x: VectorExpr => throw Exception("Finite field theory does not support vectors")
     case x: BVAddExpr => throw Exception("Finite field theory does not support vectors")
+    case x: BVSubExpr => throw Exception("Finite field theory does not support vectors")
     case x: BVMultExpr => throw Exception("Finite field theory does not support vectors")
     case x: BVConcatExpr => throw Exception("Finite field theory does not support vectors")
     case x: PublicExpr => lookupOrCreate(x, idx)

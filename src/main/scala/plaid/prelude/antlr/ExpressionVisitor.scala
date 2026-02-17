@@ -19,6 +19,10 @@ object ExpressionVisitor extends PreludeBaseVisitor[Expr] {
     e1 = visit(ctx.expr(0)),
     e2 = visit(ctx.expr(1)))
 
+  override def visitBVSubExpr(ctx: BVSubExprContext) = BVSubExpr(
+    e1 = visit(ctx.expr(0)),
+    e2 = visit(ctx.expr(1)))
+
   override def visitBVMultExpr(ctx: BVMultExprContext) = BVMultExpr(
     e1 = visit(ctx.expr(0)),
     e2 = visit(ctx.expr(1)))

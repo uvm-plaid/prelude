@@ -75,6 +75,12 @@ class VerifierTest {
     assertTrue(satisfiableBV("BVAdd(|0, out@1|, |0, out@1|) == |1, 0|"))
     assertFalse(satisfiableBV("BVAdd(|0, out@1|, |0, out@1|) == |1, 1|"))
 
+  /** Bit vectors can be subtracted with BVSub. */
+  @Test
+  def bitVectorSub(): Unit =
+    assertTrue(satisfiableBV("BVSub(|0, out@1|, |0, out@1|) == |0, 0|"))
+    assertFalse(satisfiableBV("BVSub(|0, 0|, |0, 1|) == |0, 0|"))
+
   /** Bit vectors can be multiplied with BVMult. */
   @Test
   def bitVectorMult(): Unit =

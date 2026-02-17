@@ -8,6 +8,7 @@ trait Node {
   def children(): Iterable[Node] = this match
     case VectorExpr(es) => es
     case BVAddExpr(e1, e2) => List(e1, e2)
+    case BVSubExpr(e1, e2) => List(e1, e2)
     case BVMultExpr(e1, e2) => List(e1, e2)
     case BVConcatExpr(e1, e2) => List(e1, e2)
     case AtExpr(e1, e2) => List(e1, e2)
@@ -51,6 +52,7 @@ trait Node {
   def prettyPrint(): String = this match
     case VectorExpr(es) => s"|${es.map(_.prettyPrint()).mkString(", ")}|"
     case BVAddExpr(e1, e2) => s"BVAdd(${e1.prettyPrint()}, ${e2.prettyPrint()})"
+    case BVSubExpr(e1, e2) => s"BVSub(${e1.prettyPrint()}, ${e2.prettyPrint()})"
     case BVMultExpr(e1, e2) => s"BVMult(${e1.prettyPrint()}, ${e2.prettyPrint()})"
     case BVConcatExpr(e1, e2) => s"BVConcat(${e1.prettyPrint()}, ${e2.prettyPrint()})"
     case AssertCmd(e1, e2, i) => s"assert (${e1.prettyPrint()} = ${e2.prettyPrint()})@${i.prettyPrint()}"
