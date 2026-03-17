@@ -1,0 +1,50 @@
+%%%%%%%%%%%
+% https://par.nsf.gov/servlets/purl/10099282
+
+@article{evans2018pragmatic,
+  title={A pragmatic introduction to secure multi-party computation},
+  author={Evans, David and Kolesnikov, Vladimir and Rosulek, Mike and others},
+  journal={Foundations and Trends{\textregistered} in Privacy and Security},
+  volume={2},
+  number={2-3},
+  pages={70--246},
+  year={2018},
+  publisher={Now Publishers, Inc.}
+}
+
+%%%%%%%%%%%
+
+@inproceedings{skalka-near-ppdp24,
+  title = {Language-Based Security for Low-Level {MPC}},
+  author = {Christian Skalka and Joseph P. Near},
+  year = {2024},
+  booktitle = {Proceedings of the ACM Conference on Principles and Practice of Declarative Programming},
+  abstract = {Secure Multi-Party Computation (MPC) is an important enabling technology for data privacy in modern distributed applications. Currently, proof methods for low-level MPC protocols are primarily manual and thus tedious and error-prone, and are also non-standardized and unfamiliar to most PL theorists. As a step towards better language support and language-based enforcement, we develop a new staged PL for defining a variety of low-level probabilistic MPC protocols. We also formulate a collection of confidentiality and integrity hyperproperties for our language model that are familiar from information flow, including conditional noninterference, gradual release, and robust declassification. We demonstrate their relation to standard MPC threat models of passive and malicious security, and how they can be leveraged in security verification of protocols. To prove these properties we develop automated tactics in $\mathbb{F}_2$ that can be integrated with separation logic-style reasoning.},
+  pdf = {https://arxiv.org/abs/2407.16504}
+}
+
+%%%%%%%%%%%
+
+@inproceedings{skalka-near-esop25,
+  author = {Christian Skalka and Joseph P. Near},
+  title = {{SMT}-Boosted Security Types for Low-Level {MPC}},
+  booktitle = {Proceedings of the European Symposium on Programming},
+  year = 2025,
+  abstract = {Secure Multi-Party Computation (MPC) is an important enabling technology for data privacy in modern distributed applications. We develop a new type theory to automatically enforce correctness, confidentiality, and integrity properties of protocols written in the \emph{Prelude/Overture} language framework. Judgements in the type theory are predicated on SMT verifications in a theory of finite fields, which supports precise and efficient analysis. Our approach is automated, compositional, scalable, and generalizes to arbitrary prime fields for data and key sizes.},
+  pdf = {https://arxiv.org/abs/2501.17824}
+}
+
+%%%%%%%%%%%%
+
+@Misc{bristol,
+  author =	 {David Archer and Victor Arribas Abril and Steve Lu and Pieter Maene and Nele Mertens and Danilo Sijacic and Nigel Smart},
+  title =	 {Bristol Fashion MPC Circuits.},
+  howpublished = {\url{https://nigelsmart.github.io/MPC-Circuits/}},
+  year =	 {2019}
+}
+
+
+@Misc{prelude-github,
+  title = 	 {Prelude},
+  url =          {https://github.com/uvm-plaid/prelude}
+}
