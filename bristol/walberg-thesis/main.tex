@@ -1,28 +1,65 @@
 \documentclass{article}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{todonotes}
 \usepackage{graphicx}
 \usepackage{fancyvrb}
 \usepackage{moreverb}
-
-% \usepackage{setspace}
-% \doublespacing
+\usepackage{color}
+\usepackage{soul}
+\usepackage{setspace}
+\usepackage{wrapfig}
+\raggedbottom
+\onehalfspacing
 \input{macros}
-\title{Evaluation of the \textit{Prelude} Automatic Verification Engine with Bristol Circuits}
+\title{Evaluation of the \textit{Prelude} Automatic Verification Engine with Boolean Circuits}
 \author{Felix Walberg}
 \begin{document}
 \maketitle
-
+\todo{boolean or bristol for title?}
 \section{Abstract}
-Multi-Party Computation protocol implementations, like those written in the \textit{Prelude} language with  Goldreich-Micali-Wigderson style functions, use secret shares to distribute input secrets between parties to perform computation without leaking information to possibly corrupt parties. Correctness properties of these protocols can be verified either manually or automatically to ensure that the output meets the expectations of the system for a given set of inputs. Using a Hoare Logic, pre and postconditions of each protocol can be sequentially composed such that the properties permeate through to the final step of the protocol. \textit{Prelude} parses these pre and postconditions into constraints for a Satisfiability Modulo Theory solver to automatically verify. As the protocols scale in size, it becomes important to evaluate the verification time of the automatic verification tool. In this paper, we parse Bristol Circuits for 64-bit addition and subtraction into \textit{Prelude} code, resulting in hundreds of gates, whose verifications are timed and compared against smaller circuits.
-
+Multi-Party Computation protocols are distributed protocols where homomorphic properties are utilized to perform operations on the data while preserving its privacy. Since the protocols are distributed, the encryption of the data must protect one party's inputs from the risk that another computing party is an adversary. For example, some protocols like Goldreich-Micali-Wigderson use additive secret shares to represent input values. These can be used for simple summation protocols where addition can be performed locally using the additive homomorphism. Correctness properties of these protocols can be verified either manually or automatically to ensure that the output meets the expectations of the system for a given set of inputs. The \textit{Prelude} language allows for correctness properties to be represented as pre and postconditions that leverage a Satisfiability Modulo Theory solver for automatic verification. As the protocols scale in size, it becomes important to evaluate the verification time of the automatic verification tool. In this thesis, we parse Boolean circuits for 64-bit addition and subtraction into \textit{Prelude} code, resulting in hundreds of gates, whose verifications are timed and compared against a smaller 2-bit addition circuit.
+%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 \subsection{Multi-Party Computation}
-In some instances of computation, there are multiple parties wanting to contribute inputs to the same function, which will give them a shared result without revealing any information about their input secrets to any other party. To start with a simple example, we can look at Yao's Millionaire's problem \todo{CITE}. Two millionaires wish to compare their wealth and determine who has more money without revealing how much they have to the other person. In Yao's solution, he defines a protocol that uses mathematical functions which are difficult to undo, such that even if the other person might be corrupt, they cannot figure out the other's inputs from any intermediate steps of communication. Multi-Party Computation (MPC) is an approach to solve the generalized version of this problem. A way for n parties to share data into a common function, and all receive the function's results, without sacrificing the privacy of their individual data. 
+The motivation behind Multi-Party Computation (MPC) protocols at a high level is to provide a way for multiple parties to compute some shared function on their input secrets without revealing any additional information about their inputs \cite{evans2018pragmatic}. The security of a protocol and each party's input values is defined by the real-ideal paradigm. In the ideal world, there is a third-party referred to as the functionality, which every other party completely trusts to perform the shared function on their inputs. Each party shares their inputs with the functionality, which then performs the function directly on the inputs. After computing the function, the third-party then shares this result with everyone. In practice, of course, a completely trusted functionality does not exist. However, it is a way to measure the security of a given protocol and distinguish between what information is intended to be revealed and what an adversary might learn during execution. The way we determine if a protocol in the real world is secure is by showing that it doesn't reveal any more information to a corrupt party than the ideal functionality would.
 
-To give a more concrete example, we will introduce 3-Party addition (i.e. n = 3). In this situation, the three parties want to compute the sum of their input secrets, without the other parties learning anything about their inputs. These secrets, existing in the set \{0, 1\}, are elements of the finite field F2. With a finite field, the operations + and * are defined and applications of these operations are done modulo the field's characteristic (in our case, 2). This leads to a special property of F2, where + and * can be represented by the binary operations XOR and AND respectively. The finiteness of the field elements also allows us to pick random values with equal probability, which is not possible over an infinite set of integers. Randomness will be important in the 3-Party addition protocol, as it masks the input secrets from the other parties. It is also important to note that these protocols scale to arbitrarily large prime finite fields, but we will focus on F2.
+% It is also important to realize that security does not equal safety, and sometimes the ideal functionality might reveal 
+%In some instances of computation, there are multiple parties wanting to contribute inputs to the same function, which will give them a shared result without revealing any information about their input secrets to any other party. 
+To start with a simple example, we can look at the Millionaire's Problem. Two millionaires wish to compare their wealth and determine who has more money without revealing how much they have to the other person. The ideal functionality in this case, would compare the two values and reveal some indicator, possibly a boolean value, determining if millionaire one has more money than millionaire two or not. If we want to have a secure real world protocol to perform the balance comparison, then it must only reveal the fact that one millionaire has more money and nothing more. Let's say that millionaire two, with a balance of five million dollars, is corrupt and wants to learn additional information about the bank account of millionaire one. If the output of the function is that millionaire two does not have more money than millionaire one, the corrupt party now knows with certainty that millionaire one has at least five million and one dollar. But, that must be all that they learn. Each possible dollar amount above five million should still be equally probable. Note that some information should be leaked by the intended functionality, otherwise these protocols would have no use in the real world. MPC protocols give us a way to do this by limiting the amount of information learned by corrupt parties conditional on the output of the intended functionality.
+% \todo{conclude/transition?}
 
+MPC protocols are distributed protocols, so the parties involved may each be responsible for computing parts of the shared function and communicating information back and forth when necessary. To ensure that the communication and computation of another party's data does not reveal information about the input secrets,\hl{ MPC protocols use homomorphic encryption schemes. Homomorphic encryption allows for computation to be performed on encrypted values } that would be equivalent to the computation on the plain values. For example, if we have a protocol for summing the values of three different parties together, we can generate additive secret shares of each secret $S_i$ by taking two random values $m_1, m_2$ and then a third value $m_3$ such that $S_i = m_1 + m_2 + m_3$. These shares can be distributed one to each party who can then perform addition on their three shares and broadcast that partial sum without revealing any information about the inputs. Protocols like 3-Party Addition have correctness properties, statements about what equivalences should hold at the end of execution. For 3-Party Addition, it should be the case that the output should be equivalent to the sum of the three party inputs $S_1 + S_2 + S_3$. Recent work with the \textit{Prelude} tool has explored a way to automate the verification of such correctness properties. 
+%%%%%%%%%%%%%%%%%%%
+\subsection{Background and Related Work}
+The work in this thesis is based upon the \textit{Prelude/Overture} tool first introduced in \cite{skalka-near-ppdp24}. This initial paper defines \textit{Overture}, the low-level language used for defining MPC protocols as well as \textit{Prelude}, the metalanguage used to dynamically create \textit{Overture} protocols. In addition, it proposed a brute-force automation technique for verifying protocols in the binary field. Since this technique required computing a truth table for all possible sets of inputs, it does not scale efficiently to larger protocols. The idea of automatic verification was extended to arbitrary prime fields in \cite{skalka-near-esop25}, when Satisfiability Modulo Finite Fields theory was used as the constraint programming technique. A key goal of the extension was to limit the amount of SMT solver computation during the verification of a protocol. By using pre and post conditions to represent constraints that hold throughout these protocols, they can be verified once and assumed to hold in any instantiation in a larger circuit. This is particularly beneficial in the circuits evaluated in this thesis, as they contain hundreds of such gates. 
+
+This thesis is based upon an even newer version of the \textit{Prelude} tool with an updated implementation capable of handling larger circuits. The verification examples from existing work focus on the Finite Fields subset of cvc5 SMT, but this thesis will work on bit-vector representations of inputs with the Bit-Vector theory. This means that pre and postcondition assertions can be made on larger numbers of bits. We will see examples of protocols with 64 bit input secrets.
+
+For our secret sharing scheme, we will continue to use the Goldreich-Micali-Wigderson (GMW) protocol, working with bits. In GMW, input secrets are represented by secret shares padded with random values, which reconstruct via addition (in the binary case this is equivalent to $\oplus$) to the original values \cite{evans2018pragmatic}. We turn to Bristol Circuits \cite{bristol}, a standard format for boolean logic circuits, for examples to test \textit{Prelude}'s automatic verification using the Bit-Vector library. Examples of evaluating these boolean circuits with the GMW protocol will be presented in \textbf{\hyperref[sec:Prelude]{\textit{Prelude} Language}} and \textbf{\hyperref[sec:Methods]{Methods}}, written in the \textit{Prelude} language. 
+%%%%%%%%%%%%%%%%%%%
+% \item \cite{skalka-near-ppdp24}
+% \item \cite{skalka-near-esop25}
+% \item \cite{evans2018pragmatic}
+% \item \cite{bristol}
+%%%%%%%%%%%%%%%%%%%
+\subsection{Contributions}
+\label{sec:Contributions}
+%\todo{Should more of this BC be pulled out to background info/introduction rather than contributions?}
+% FIGURE OUT A BETTER PLACE FOR THIS INFO, possibly with parser?
+% Bristol Circuits \cite{bristol} are a standard way to format boolean logic circuits such as a 64-bit Adder. Each gate in the circuit is encoded into a string with the number of input wires, number of output wires, labels for input and output wires, and the operation performed by the gate. Since the operations consist of AND, XOR, and NOT (referred to as INV), they serve as great examples for implementation with the GMW protocol and verification with the \textit{Prelude} tool.
+Previous work using \textit{Prelude}'s automatic verification evaluated its performance on smaller circuits using arbitrary finite fields \cite{skalka-near-esop25}, but this thesis will extend the evaluation of the scalability of \textit{Prelude} as a verification engine to larger circuits using bit-vector theory. In collaboration with PhD Student Steven Baldasty and my advisor Dr. Christian Skalka, the language's syntax was expanded to include BVAdd, BVSub, and BVConcat operations on bit-vectors. 
+
+In further collaboration with Dr. Christian Skalka, a Perl parsing script was modified to translate Bristol Circuits into \textit{Prelude} MPC protocols. These circuits are large and it is not reasonable to implement them manually. The Perl script also automatically generates postconditions for verifying the correctness properties of the circuits, which is also a tedious manual task. From the parser, we contribute code that performs the automatic verification of 64 bit addition and 64 bit subtraction boolean circuits. 
+%\todo{How should I conclude this section? Say anything else about the timing of the verification or comparison to FF theory?}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% write about SMT by talking about how we can "cross party lines" in constraints, allowing us to verify correctness that wasn't possible directly in overture (this is present in the 3-party addition example)
+\section{\textit{Overture} and 3-Party Addition}
+We can return to the example of 3-Party Addition to briefly overview what a simple \textit{Overture} MPC protocol and its correctness property look like. In this protocol, parties $P_1, P_2,$ and $P_3$ have secrets $S_i$ such that $S_i = m_1 + m_2 + m_3$ where each secret share $m_j$ reveals no information about the secret due to a random one-time pad. The parties wish to compute $\sum S_i$ and can do so securely with the \textit{Overture} protocol defined in figure \ref{fig-3-party-add}.
+
+% TALK ABOUT THIS WHEN XORGMW IS FIRST INTRODUCED
+% where + and * can be represented by the binary operations XOR and AND respectively. The finiteness of the field elements also allows us to pick random values with equal probability, which is not possible over an infinite set of integers. Randomness will be important in the 3-Party addition protocol, as it masks the input secrets from the other parties. It is also important to note that these protocols scale to arbitrarily large prime finite fields, but we will focus on F2.
 % Taken from https://github.com/uvm-plaid/jpdf/blob/main/esop25/camera-ready/smt.tex
+\begin{figure}
 {\footnotesize
 $$
 \begin{array}{c@{\qquad}c}
@@ -42,22 +79,32 @@ $$
   \out{2} &:=& \elab{(\rvl{1} \fplus \rvl{2} + \rvl{3})}{2}\\
   \out{3} &:=& \elab{(\rvl{1} \fplus \rvl{2} + \rvl{3})}{3}
 \end{array}
-\end{array}
-$$}
+\end{array}$$
+}
+\caption{3-Party Addition from \cite{skalka-near-esop25}}
+\label{fig-3-party-add}
+\end{figure}
+Using the message notation $\elab{\mesg{si}}{j} := \elab{(\secret{i} \fminus \locflip \fminus \flip{x})}{i}$ each party i is sharing one secret share of their secret $si$ with each other party j. Since these shares are based on random one-time pads, it does not matter that another party sees the value, as it reveals nothing about the input secret. Now each party has one share of their own secret, as well as one share of each of the other two secrets. Each party can locally compute the sum of their shares and broadcast it to the other parties without leaking any information, with the public reveal notation $\rvl{1} := \elab{(\locflip \fplus \mesg{s2} \fplus \mesg{s3})}{1}$. 
 
-In the 3-Party protocol definition from \cite{skalka-near-esop25}, each party $P_i$ creates two additional secret shares \cite{evans2018pragmatic} which are padded by randomly selected field elements such that the sum of the three values is $P_i$'s secret. One secret share is given to each of the other two parties. Now each party has one share of their own secret, as well as one share of each of the other two secrets. Each party can locally compute the sum of their shares and broadcast it to the other parties without leaking any information, as the shares are padded by random numbers. Due to the additive homomorphism (Does this need to be explained?) of F2, the parties can then add these partial sums to find the sum of the three input secrets without any party learning information about another party's secret.
+Due to the additive homomorphism of F2 (\hl{Should this be explained?}), which ensures computations on secret shares are equivalent to computations on the underlying values, the parties can then add these partial sums to find the sum of the three input secrets without any party learning information about another party's secret. Understanding this \textit{Overture} syntax, particularly the message sending, will be useful in reading the GMW-style \textit{Prelude} libraries used for the protocols verified in \textbf{\hyperref[sec:Prelude]{Prelude}} and \textbf{\hyperref[sec:Methods]{Methods}}. 
 
-To determine if an MPC protocol maintains the security of secret inputs, we can observe what is learned in the real world compared to an ideal world where a trusted third-party computes the ideal functionality. The ideal functionality $F$ (format?) defines what the program is intended to reveal (e.g. if millionaire one has more or less money than millionaire two). We can evaluate what a corrupt party can observe to determine if any additional information is learned. This assumes a semi-honest adversarial threat model, that is, corrupt parties will try to learn additional information through observation, but will still follow the protocol. In the Millionaire's problem, the protocol reveals who has more money. For the millionaire with less money, this eliminates all possible values for the input of the richer millionaire below their own balance. From the output and their own input, they know the other millionaire must have at least as much money as they do, but each of the dollar amounts above their own is still equally likely. In 3-Party Addition, if a party is corrupt, they can subtract their secret from the output to get the sum of the other party's inputs, but learn nothing more about what they are individually. The goal of verifying the security of an MPC protocol, is that conditional on the output of $F$, each possible value is equally likely. 
+The last important piece of this 3-Party Addition protocol, is the correctness property. The ideal functionality should reveal the summation of the three secret inputs, and we can write the real world protocol's interpretation as follows:
 
-To prove that an MPC protocol realizes an ideal functionality, constraints can be applied to the protocol in the form of pre and post-conditions. \todo{Figure out this transition, differentiation between constraits for correctness property vs security...}
+{$$\out{1} \eop \sx{1}{1} \fplus \sx{2}{2} \fplus \sx{3}{3}\strut$$}
 
-Hoare Triples are of the form \{E1\}C\{E2\} \todo{Figure out formatting and naming convention}, where E1 and E2 are sets of assertions made about variables that may exist in the command? C. \{E1\}C\{E2\} implies that: Given E1 is met, if C terminates then E2 will also be met. For MPC protocols, we can use these triples to constrain the inputs and outputs ensuring that security properties hold throughout execution. One of the most relevant Hoare Logic rules for the work in this paper is the sequential composition (SEQ) rule. This states that if the post condition of C1 is the same as the precondition of C2 \todo{possibly reference figure with formal rules?}, then they can be combined to form \{E1\}P1;P2\{E3\}. For MPC protocols with many consecutive commands, we can chain together these conditions and verify their execution with the first precondition and last postcondition. This reduces the number of times assertions are checked, which reduces complexity as the number of commands scales up.
+This constraint makes up the postcondition of our 3-Party Addition protocol, defining the correctness property to be verified. This format is easily translated by \textit{Prelude} into the constraint the cvc5 SMT library needs to automatically verify it.
+% To determine if an MPC protocol maintains the security of secret inputs, we can observe what is learned in the real world compared to an ideal world where a trusted third-party computes the ideal functionality. The ideal functionality $F$ (format?) defines what the program is intended to reveal (e.g. if millionaire one has more or less money than millionaire two). We can evaluate what a corrupt party can observe to determine if any additional information is learned. This assumes a semi-honest adversarial threat model, that is, corrupt parties will try to learn additional information through observation, but will still follow the protocol. In the Millionaire's problem, the protocol reveals who has more money. For the millionaire with less money, this eliminates all possible values for the input of the richer millionaire below their own balance. From the output and their own input, they know the other millionaire must have at least as much money as they do, but each of the dollar amounts above their own is still equally likely. In 3-Party Addition, if a party is corrupt, they can subtract their secret from the output to get the sum of the other party's inputs, but learn nothing more about what they are individually. The goal of verifying the security of an MPC protocol, is that conditional on the output of $F$, each possible value is equally likely. 
 
-The existing literature using these Hoare Logic rules and the \textit{Prelude} language \cite{skalka-near-ppdp24, skalka-near-esop25} verify singular bits in the pre and postconditions, but don't extend these assertions to vector representations of numbers.
+% To prove that an MPC protocol realizes an ideal functionality, constraints can be applied to the protocol in the form of pre and post-conditions. 
+%\todo{Figure out this transition, differentiation between constraits for correctness property vs security...}\\
 
-The constraints introduced in the pre and postconditions define the correctness properties of the MPC protocols. Taking the 3-Party Addition example, the assertion $$
-\out{1} \eop \sx{1}{1} \fplus \sx{2}{2} \fplus \sx{3}{3}
-$$ is how we verify the protocol is correct, that the output is equivalent to the sum of the three secret inputs. These constraint statements can be easily translated into constraints in a Satisfiability Modulo Theory (SMT) solver, where the protocol's correctness verification can be automated. SMT is a more general version of Boolean Satisfiability, where the solver is presented with a list of boolean constraints and iterates over all combinations of possible values to determine if there is a set of booleans that satisfies the constraints. SMT does the same thing but with arbitrarily sized integers. For our work, we use the Cooperating Validity Checker (cvc5) \todo{cite this} library to run models over the input secret space and determine if protocols hold for all combinations of values. For a trivial example, we can use cvc5's Pythonic API to establish constraints in a small system. 
+% Hoare Triples are of the form \{E1\}C\{E2\} \todo{Figure out formatting and naming convention}, where E1 and E2 are sets of assertions made about variables that may exist in the command? C. \{E1\}C\{E2\} implies that: Given E1 is met, if C terminates then E2 will also be met. For MPC protocols, we can use these triples to constrain the inputs and outputs ensuring that security properties hold throughout execution. One of the most relevant Hoare Logic rules for the work in this thesis is the sequential composition (SEQ) rule. This states that if the post condition of C1 is the same as the precondition of C2 \todo{possibly reference figure with formal rules?}, then they can be combined to form \{E1\}P1;P2\{E3\}. For MPC protocols with many consecutive commands, we can chain together these conditions and verify their execution with the first precondition and last postcondition. This reduces the number of times assertions are checked, which reduces complexity as the number of commands scales up.\\
+% The existing literature using these Hoare Logic rules and the \textit{Prelude} language \cite{skalka-near-ppdp24, skalka-near-esop25} verify singular bits in the pre and postconditions, but don't extend these assertions to vector representations of numbers.
+
+\section{Satisfiability Modulo Theory}
+\todo{rewrite!}
+These constraint statements can be easily translated into constraints in a Satisfiability Modulo Theory (SMT) solver, where the protocol's correctness verification can be automated. SMT is a more general version of Boolean Satisfiability, where the solver is presented with a list of boolean constraints and iterates over all combinations of possible values to determine if there is a set of booleans that satisfies the constraints. SMT does the same thing but with arbitrarily sized integers. For our work, we use the Cooperating Validity Checker (cvc5) \todo{cite this} library to run models over the input secret space and determine if protocols hold for all combinations of values. For a trivial example, we can use cvc5's Pythonic API to establish constraints in a small system. 
+\begin{figure}
 {\footnotesize
 \begin{center}
     \begin{tabular}{l}
@@ -66,44 +113,21 @@ $$ is how we verify the protocol is correct, that the output is equivalent to th
     solve(a + 10 == 2 * b, b + 22 == 2 * a)\\
     \end{tabular}
 \end{center}}
-Executing this script will return the result [a = 18, b = 14], a solution to the system of constraints defined on the third line. A solution means that the constraints are satisfiable. In practice with the larger protocols, we check the unsatisfiability of the constraints. This will return true if any set of input secrets results in an output that does not match the expectation of the postcondition. The cvc5 Bit Vector library has native functions for adding, subtracting, and concatenating bit vectors, which allow us to perform these operations without the costly bottleneck of making an external call to custom functions to achieve the same goal.
-% \begin{itemize}
-% \item Would this cover information such as what it means to verify a protocol? 
-% \item secret sharing, wanting to eliminate information leakage to an adversary (all inputs are equally likely conditional on the output)
-% \item ideas of Hoare logic and how we can build these protocols of larger chains of gates
-% \item can take ideas from my proposal up to page 7
-% \end{itemize}
-\subsection{Background and Literature Review}
-Existing literature regarding the \textit{Prelude} verification engine (CITE PROF. SKALKA'S PAPERS 1,2) presents an introduction to using SMT to automatically verify protocols, but without an implementation of this or a Hoare logic. We are working with a more recent version of the \textit{Prelude} tool that has a new implementation, a Hoare logic for SMT verification, and can handle larger circuits. The verified secret sharing protocols were using finite field elements, but this paper will focus on an additional expansion of the tool to allow for bit vector representation of input secrets. This means that pre and postcondition assertions can verify with larger numbers than singular bits. We will see examples of protocols with 64 bit input secrets.
-
-For our secret sharing scheme, we will be using the Goldreich-Micali-Wigderson (GMW) protocol, where logic gates are evaluated using inputs from additive secret shares which reconstruct via summation to the original input secrets (CITE PRAGMATIC MPC). Examples of evaluating gates with the GMW protocol will be presented in section X (LINK TO SECTION), written in the \textit{Prelude} language. 
-\todo{Figure out if other information from Pragmatic MPC should be introduced and cited here.} 
-
-
-% Enough so that the contributions make sense. 
-% Possible things to cover:
-% \begin{itemize}
-% \item cvc5 and SMT solvers (talk about finite fields too and why we are wanting bit vectors in this case?)
-% \item GMW and OT (would the requirements for understanding this be in the intro subsection 1?)
-% \item Bristol Circuits (or should they get their own section?)
-% \item Literature:
-% \item - ESOP paper, PPDP paper, possibly Toplas?, certainly Pragmatic MPC for learning about MPC protocols, 
-% \item \cite{skalka-near-ppdp24}
-% \item \cite{skalka-near-esop25}
-% \item \cite{evans2018pragmatic}
-% \item \cite{bristol}
-% \end{itemize}
-\subsection{Contributions}
-\todo{Should more of this BC be pulled out to background info/introduction rather than contributions?}
-Bristol Circuits \cite{bristol} are a standard way to format boolean logic circuits including various arithmetic  operations on binary inputs, such as a 64-bit Adder. Each gate in the circuit is encoded into a string with the number of input wires, number of output wires, labels for input and output wires, and the operation performed by the gate. Since the operations consist of AND, XOR, and NOT (referred to as INV), they serve as great examples for implementation with the GMW protocol and verification with the \textit{Prelude} tool. Previous work with \textit{Prelude} evaluated its performance on smaller circuits using finite fields, but this paper will extend the evaluation of the scalability of \textit{Prelude} as a verification engine to larger circuits using bit vector theory. In collaboration with PhD Student Steven Baldasty and my advisor Dr. Christian Skalka, the language's syntax was expanded to include BVAdd, BVSub, and BVConcat operations on bit vectors. 
-In further collaboration with Dr. Christian Skalka, we modified a Perl parser script to translate the Bristol Circuits into \textit{Prelude} code. These circuits are large and it is not reasonable to implement them manually. The Perl script also automatically generates postconditions for verifying the correctness of the circuits, which is also a tedious manual task. From the parser, we contribute code that performs the automatic verification of 64 bit addition and 64 bit subtraction circuits. \todo{How should I conclude this section? Say anything else about the timing of the verification or comparison to FF theory?}
-
+\caption{cvc5 pythonic library example of SMT}
+\label{fig-cvc5}
+\end{figure}
+Executing this script will return the result [a = 18, b = 14], a solution to the system of constraints defined on the third line. A solution means that the constraints are satisfiable. In practice with the larger protocols, we check the unsatisfiability of the constraints. This will return true if any set of input secrets results in an output that does not match the expectation of the postcondition. The cvc5 Bit-Vector library has native functions for adding, subtracting, and concatenating bit-vectors, which allow us to perform these operations without the costly bottleneck of making an external call to custom functions to achieve the same goal.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{\textit{Prelude} Language}
-To introduce the \textit{Prelude} Language, we will start with a simple 2-bit Adder circuit. Figure X \todo{REPLACE}  from (CITE CMU LAB) shows the circuit diagram. 
-\begin{center}
-\includegraphics[scale=0.75]{2-bit-adder.png}
-\end{center}
-This circuit is not secure, but by replacing each gate by the GMW equivalent in Prelude, we can create an MPC protocol. Here we will more formally introduce the GMW protocol, as used as \textit{Prelude} language. 
+\label{sec:Prelude}
+To introduce the \textit{Prelude} Language, we will start with a simple example. Suppose we have two parties P1, and P2, who have secrets S1 and S2 respectively, existing in \{0, 1\}. Our ideal functionality will be to compute the XOR of the negation of S1 and S2, i.e. $(\neg S1) \oplus S2$. Figure \ref{fig-2-party-not-xor} made using \todo{cite circuit drawer tool} illustrates the boolean circuit diagram.
+\begin{figure}
+\centerline{\includegraphics[scale=.4]{2-party-not-xor.png}}
+\caption{2-Party NOT XOR Circuit Diagram}
+\label{fig-2-party-not-xor}
+\end{figure}
+This circuit is not secure, but we can replace the wire values and boolean gates according to the GMW protocol. Using additive secret sharing, we can split each party's secret into two shares that appear random but XOR together to reconstruct the secret as shown in the RECON function. Recall that XORing singular bit values is the same as addition. In the following \textit{Prelude} code, it is assumed that the input variables for each gate are already shared in this way, as each function definition handles a wire's value as a combination of party 1's share and party 2's share. 
+\begin{figure}
 {\footnotesize
 \begin{verbatimtab}
 exprfunctions:
@@ -126,9 +150,39 @@ notgmw(z:string, x:string) {
 }
 postcondition: ( RECON(z) == not(RECON(x)) )
 \end{verbatimtab}
-
 }
-Figure X \todo{REPLACE} defines the XOR and NOT as GMW-style \textit{Prelude} functions. For simplicity, the definition of the andgmw(x,y,z) function which uses oblivious transfer has beem omitted, but follows a similar structure. With these gate definitions, we built the Prelude implementation of the 2-bit Adder in Figure X \todo{REPLACE}. 
+\caption{\textit{Prelude} libraries for GMW-style gates}
+\label{fig-prelude-gmw}
+\end{figure}
+Another property of operations on bits is that the negation of a value made up of shares x1 and x2, is equivalent to $x1 \oplus (\neg x2)$. This is utilized in the function definition of notgmw(z,x). With these \textit{Prelude} functions, we can write the body of a main function that securely represents the circuit and realizes our ideal functionality in figure \ref{fig-2-party-not-xor-code}. 
+\begin{figure}
+{\footnotesize
+\begin{verbatimtab}
+main() {
+   notgmw("g1", "x");
+   xorgmw("z", "g1", "y")
+} 
+postcondition: (RECON("z") == RECON("y") + not(RECON("x")))
+\end{verbatimtab}
+}
+\caption{2-Party NOT XOR Example Protocol}
+\label{fig-2-party-not-xor-code}
+\end{figure}
+We define the postcondition to assert the correctness property of the circuit. It states that the reconstruction of the output "z" should be equivalent to the sum ($\oplus$) of the reconstruction of input "y" with the negation of input "x", which was our original intended functionality. This circuit verifies with an empty precondition, indicating it holds for all values of "x" and "y". 
+
+In collaboration with PhD Student Steven Baldasty and my advisor Dr. Christian Skalka, we also discussed and implemented changes to the \textit{Prelude} backend to include syntax for BVAdd(), BVSub(), and "$\vert$", the equivalent of BVConcat in the cvc5 Bit-Vector SMT solver. This new functionality allows the tool to be used to verify circuits with bit-vector representations of numbers as inputs for addition and subtraction. These functions are invoked in the pre and postconditions of the larger circuits tested and described in \textbf{\hyperref[sec:Methods]{Methods}}. There is an advantage to these functions being defined in \textit{Prelude} and within the cvc5 library. We don't have to make external calls to custom function definitions and we can instead work within the optimized libraries, reducing the verification time.
+
+\section{Methods}
+\label{sec:Methods}
+For an introduction to combining the new bit-vector syntax in \textit{Prelude} with an MPC protocol, we started with a 2-bit adder \hl{add CMU lab citation to bibtex}. The 2-bit adder, as shown in figure \ref{fig-2-bit-adder-circuit} initially contained XOR, AND, and OR boolean gates. Due to the cvc5 BVAdd definition dropping the carry bit, we were able to ignore the carry bit output wire and the corresponding gates. In addition to the xorgmw(z,x,y) \textit{Prelude} function defined in figure \ref{fig-prelude-gmw}, we used additional libraries for an andgmw(z,x,y) function that utilizes oblivious transfer as defined in the GMW protocol. This definition has been omitted for simplicity.
+
+\begin{figure}
+    \centerline{\includegraphics[scale=0.75]{2-bit-adder.png}}
+    \caption{2-Bit Adder Circuit Diagram}
+    \label{fig-2-bit-adder-circuit}
+\end{figure}
+Without the carry bit output wire, there are only four relevant boolean gates to translate into \textit{Prelude} code. The main function for the 2-bit adder in figure \ref{fig-2-bit-adder} defines the secure version of the adder.
+\begin{figure}
 {\footnotesize
 \begin{verbatimtab}
 main() {
@@ -137,35 +191,90 @@ main() {
    xorgmw("g2", "x2", "y2");
    xorgmw("z2", "g2", "g1") // Bit 1 (most significant)
 } 
-postcondition: (|RECON("z2"), RECON("z1")| == BVAdd(|RECON("x2"), RECON("x1")|, |RECON("y2"), RECON("y1")|))
-\end{verbatimtab}}
-Note that the postcondition explicitly states the correctness property, that the output bit vector is equivalent to the sum of the two input bit vectors. The "$\vert$" syntax represents concatenation of bits into a larger bit vector and RECON() reconstructs the values by summing the shares of each secret. Given the body of main and the postcondition, the \textit{Prelude} tool passes the constraints to the SMT solver to automatically verify the protocol. \todo{Should there be more discussion of Prelude?}
+postcondition: (|RECON("z2"), RECON("z1")| == BVAdd(|RECON("x2"), RECON("x1")|, 
+                                                   |RECON("y2"), RECON("y1")|))
+\end{verbatimtab}
+}
+\caption{2-Bit Adder in \textit{Prelude}}
+\label{fig-2-bit-adder}
+\end{figure}
+Note that the postcondition explicitly states the correctness property. The output bit-vector, generated from the two output bits concatenated via "$\vert$", is equivalent to the sum of the two bit-vector inputs. Given the body of main and the postcondition, we used the \textit{Prelude} tool to pass the constraints to the SMT solver and automatically verify the protocol. As a small circuit, this verified quickly.
 
-\section{Methods}
-In collaboration with PhD Student Steven Baldasty and Dr. Christian Skalka, we discussed and implemented changes to the \textit{Prelude} backend to include syntax for BVAdd(), BVSub(), and "$\vert$", the equivalent of BVConcat in the cvc5 solver. \todo{Should introduce cvc5 in smt section} This new functionality allows the tool to be used to verify circuits with bit vector representations of numbers as inputs for addition and subtraction. We made modifications to the Perl parsing script to include NOT gates as well as automatic generation of postconditions \todo{CITE PARSER IN REPO}. The parser was ran on Bristol Circuit text files for the 64-bit Adder and 64-bit Subtract \todo{CITE BRISTOL} circuits. With the GMW-style \textit{Prelude} function calls and BVAdd()/BVSub() postconditions, we implemented \textit{Prelude} code \todo{CITE repo circuit implementations} to automatically verify the correctness of the circuits containing hundreds of gates. \todo{Mention BVMult/64-bit multiplier as well?}
-% \begin{itemize}
-% \item cite GMW example from Prof. Skalka's paper
-% \item cite Hoare logic definitions
-% \item \cite{prelude-github}
-% \end{itemize}
+With a successful verification of a simple circuit using the bit-vector theory SMT solver, we decided to expand the evaluation to larger boolean circuits, using the format of Bristol Circuits \cite{bristol}. As described in the \textbf{\hyperref[sec:Contributions]{Contributions}},\todo{Change to its own intro subsection} each line of the Bristol Circuit format includes the number of input wires, number of output wires, list of input and output wires, and the type of boolean gate operation. For the circuits we wished to implement, it was not reasonable to manually translate hundreds of these lines into \textit{Prelude} code. 
+
+The solution was to write a parsing script in Perl. The script was made in collaboration with my advisor, Dr. Christian Skalka. Perl has well documented syntax for regular expressions, which was useful in parsing the Bristol Circuit format. For each line, we use the character class \textbackslash w to capture the gate operation. We could then go case by case for each gate and use the \textbackslash d+ character class to retrieve the input and output wire values. These values are all that is necessary to generate a \textit{Prelude} function call, which was printed to the terminal for each gate. After the initial script, additional modifications were made to include a check for XOR gates, which are present in both of the larger circuits we wanted to test the tool on. The script was also extended to automatically generate the post condition. The post condition reversed the order of inputs to maintain the proper bit significance used in the cvc5 library, used BVConcat on both inputs and outputs, and the appropriate BVAdd/BVSub operation.
+
+The parser was run on Bristol Circuit text files for the 64-bit Adder and 64-bit Subtract circuits \cite{bristol}. It was then straightforward to populate the body of the main function with the list of GMW-style gate function calls, and add the BVAdd()/BVSub() operations to the corresponding postconditions. The implementations are available in the \textit{Prelude} repository \cite{prelude-github}, containing hundreds of gates. When run with the \textit{Prelude} engine, the correctness properties are automatically verified after several seconds. 
+% \cite{prelude-github}
 
 \section{Experiments and Results}
-The \textit{Prelude} implementations of the 2-bit Adder, 64-bit Adder, and 64-bit Subtract Bristol Circuits were run on a personal MacBook Air with the M2 chip.
+\label{sec:Results}
+The \textit{Prelude} implementations of the 2 party NOT-XOR, 2-bit Adder, 64-bit Adder, and 64-bit Subtract boolean circuits were run on a personal MacBook Air with the M2 chip. Each circuit was verified 20 times and the duration was taken for the table below.
+\begin{figure}[h]
 \begin{center}
-\begin{tabular}{ |c|c|c|c|}
+    \scalebox{0.8}{
+\begin{tabular}{ |c|c|c|c|c|}
     \hline
-    & 2-Bit Adder & 64-Bit Adder & 64-Bit Subtract\\
+    & 2 party NOT-XOR & 2-Bit Adder & 64-Bit Adder & 64-Bit Subtract\\
     \hline\hline
-    Verification time (ms): & 28 & 3700 & 5300 \\
+    Number of NOT gates & 1 & 0 & 0 & 63\\
+    \hline
+    Number of XOR gates & 1 & 3 & 313 & 313\\
+    \hline
+    Number of AND gates & 0 & 1 & 63 & 63\\
+    \hline
+    % \textbf{Total gates} & & \textbf{4} & \textbf{376} & \textbf{439}\\
+    Total gates & 2 & 4 & 376 & 439\\
+    \hline
+    \textbf{Verification time (ms)} & \textbf{21.25}& \textbf{29.75} & \textbf{4055.05} & \textbf{5931.50} \\
     \hline
 \end{tabular}
+}
 \end{center}
-\todo{Formatting of table, and figure out best practice for time (should I average it over x attempts?)}
-
-\section{Conclusions and Future Work(?)}
+\caption{Verification times for all boolean circuits (averaged over 20 runs)}
+\label{fig-results}
+\end{figure}
+\todo{talk about results}
+\section{Conclusions and Future Work}
+From the table in \textbf{\hyperref[sec:Results]{Experiments and Results}}, 
 Possibly talk about BVMult here or talk with Steven about what was holding it up on the VACC
 
 \bibliographystyle{ACM-Reference-Format} % Best reference format?
 \bibliography{draft}
 
 \end{document}
+
+% REMAINING TODO
+% grammar/spell check
+% Rework abstract (DONE? proof read next)
+% Rework intro
+% Remove Hoare logic stuff
+% Add detail to negation of unsatisfiability idea
+% Look at line formatting above pythonic example
+% Add new example using just XOR and NOT (DONE)
+% Turn all images AND CODE into figures
+% Replace all missing citations
+% Complete Conclusions/Future Work or add explanation to Experiments and Results
+% TODO/Questions:
+    %* How to conclude contributions section?
+    %* fix terminology around "homomorphic encryption"
+    % boolean vs bristol circuits in title
+    % overture example?
+    %* what to call the 2 party not xor example (and can i use this diagram with citation?)
+    %* clarify which examples in FF did not verify, what claims i can make about how this extends the evaluation of the tool knowing that those examples arent necessarily comparable to the BV ones
+    % formatting figures to wrap with text?
+    % formatting of \ref{} to figures and sections? all hyperref?
+
+% Notes for 3/24
+% rewrote abstract
+% rewrote intro (start with IF and then millionaires prob)
+% removed mentions of Hoare Logic
+% moved background/related work up sooner
+% changed code and images to figures
+% rewrote prelude lang section to not use 2 bit adder but instead a new example
+% added new not xor example to table of results
+
+
+% NEXT STEPS
+% rewrite SMT section
+% Write conclusion/future work and finish results page 
