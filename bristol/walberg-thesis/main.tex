@@ -86,13 +86,13 @@ $$
 \end{figure}
 Using the message notation $\elab{\mesg{si}}{j} := \elab{(\secret{i} \fminus \locflip \fminus \flip{x})}{i}$ each party i is sharing one secret share of their secret $si$ with each other party j. Since these shares are based on random one-time pads, it does not matter that another party sees the value, as it reveals nothing about the input secret. Now each party has one share of their own secret, as well as one share of each of the other two secrets. Each party can locally compute the sum of their shares and broadcast it to the other parties without leaking any information, with the public reveal notation $\rvl{1} := \elab{(\locflip \fplus \mesg{s2} \fplus \mesg{s3})}{1}$. 
 
-Due to the additive homomorphism of F2 (\hl{Should this be explained?}), which ensures computations on secret shares are equivalent to computations on the underlying values, the parties can then add these partial sums to find the sum of the three input secrets without any party learning information about another party's secret. Understanding this \textit{Overture} syntax, particularly the message sending, will be useful in reading the GMW-style \textit{Prelude} libraries used for the protocols verified in \textbf{\hyperref[sec:Prelude]{Prelude}} and \textbf{\hyperref[sec:Methods]{Methods}}. 
+Due to the additive homomorphism of F2 (\hl{Should this be explained?}), which ensures computations on secret shares are equivalent to computations on the underlying values, the parties can then add these partial sums to find the sum of the three input secrets without any party learning information about another party's secret. Understanding this \textit{Overture} syntax, particularly the message sending, will be useful in reading the GMW-style \textit{Prelude} libraries used for the protocols verified in \textbf{\hyperref[sec:Prelude]{\textit{Prelude} Language}} and \textbf{\hyperref[sec:Methods]{Methods}}. 
 
 The last important piece of this 3-Party Addition protocol, is the correctness property. The ideal functionality should reveal the summation of the three secret inputs, and we can write the real world protocol's interpretation as follows:
 
 {$$\out{1} \eop \sx{1}{1} \fplus \sx{2}{2} \fplus \sx{3}{3}\strut$$}
 
-This constraint makes up the postcondition of our 3-Party Addition protocol, defining the correctness property to be verified. This format is easily translated by \textit{Prelude} into the constraint the cvc5 SMT library needs to automatically verify it.
+This constraint makes up the postcondition of our 3-Party Addition protocol, defining the correctness property to be verified. This format is easily translated into the constraint the cvc5 SMT library needs to automatically verify it.
 % To determine if an MPC protocol maintains the security of secret inputs, we can observe what is learned in the real world compared to an ideal world where a trusted third-party computes the ideal functionality. The ideal functionality $F$ (format?) defines what the program is intended to reveal (e.g. if millionaire one has more or less money than millionaire two). We can evaluate what a corrupt party can observe to determine if any additional information is learned. This assumes a semi-honest adversarial threat model, that is, corrupt parties will try to learn additional information through observation, but will still follow the protocol. In the Millionaire's problem, the protocol reveals who has more money. For the millionaire with less money, this eliminates all possible values for the input of the richer millionaire below their own balance. From the output and their own input, they know the other millionaire must have at least as much money as they do, but each of the dollar amounts above their own is still equally likely. In 3-Party Addition, if a party is corrupt, they can subtract their secret from the output to get the sum of the other party's inputs, but learn nothing more about what they are individually. The goal of verifying the security of an MPC protocol, is that conditional on the output of $F$, each possible value is equally likely. 
 
 % To prove that an MPC protocol realizes an ideal functionality, constraints can be applied to the protocol in the form of pre and post-conditions. 
@@ -256,14 +256,15 @@ Possibly talk about BVMult here or talk with Steven about what was holding it up
 % Replace all missing citations
 % Complete Conclusions/Future Work or add explanation to Experiments and Results
 % TODO/Questions:
-    %* How to conclude contributions section?
-    %* fix terminology around "homomorphic encryption"
+    % How to conclude contributions section?
+    % fix terminology around "homomorphic encryption"
     % boolean vs bristol circuits in title
     % overture example?
-    %* what to call the 2 party not xor example (and can i use this diagram with citation?)
-    %* clarify which examples in FF did not verify, what claims i can make about how this extends the evaluation of the tool knowing that those examples arent necessarily comparable to the BV ones
+    % what to call the 2 party not xor example (and can i use this diagram with citation?)
+    % clarify which examples in FF did not verify, what claims i can make about how this extends the evaluation of the tool knowing that those examples arent necessarily comparable to the BV ones
     % formatting figures to wrap with text?
-    % formatting of \ref{} to figures and sections? all hyperref?
+    % formatting of \ref{} to figures and sections? all hyperref? also capitalize "F"igure
+    % Format F2 into symbol for finite field
 
 % Notes for 3/24
 % rewrote abstract
