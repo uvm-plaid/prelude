@@ -1,7 +1,8 @@
 \documentclass{beamer}
+\usepackage{moreverb}
 
 \title{Empirical Evaluation of the \textit{Prelude} Automatic Verification Engine with Boolean Circuits}
-\author{Honors Thesis by Felix Walberg}
+\author{Honors Thesis by Felix Walberg\\Advised by Dr. Christian Skalka}
 \date{April 15, 2026}
 \begin{document}
 \begin{frame}
@@ -13,6 +14,7 @@
     \item Working with MPC protocols to perform secure computations on shared data
     \item Automatically verifying these protocols are correct with \textit{Prelude} tool
     \item Testing how this tool scales as boolean circuits get larger
+    \item Why we believe Bit-Vector theory was worth using
     \end{itemize}
 \end{frame}
 \begin{frame}
@@ -25,69 +27,92 @@
 \end{frame}
 \begin{frame}
     Introduction to MPC\\
-    - Motivations\\
-    - Ideal functionality, no trusted 3rd party in real world\\
+    \begin{itemize}
+    \item Motivations: securely compute shared functions in private data
+    \item Ideal functionality, real-ideal world
+    \end{itemize}
 \end{frame}
 \begin{frame}
     Introduction to MPC\\
-    - What corrupt view learns\\
-    - What they don't learn\\
-    - Millionaires problem\\
+    \begin{itemize}
+    \item What corrupt view learns and should not learn
+    \item Millionaires problem\\
+    \end{itemize}
 \end{frame}
 \begin{frame}
-    Introduction to MPC\\
-    - mpc is distributed, localized values\\ 
-    - 3 party addition intro
+    Introduction to MPC
+    \begin{itemize}
+    \item MPC is distributed, localized values\\ 
+    \item 3 party addition intro, connecting ideal functionality to correctness
+    \end{itemize}
 \end{frame}
 \begin{frame}
     \textit{Overture}\\
-    - Language for writing MPC protocols\\
-    - syntax for secrets, random values, messages, public reveal\\
-    - 3 party example in Overture?\\
+    \begin{itemize}
+    \item Language for writing MPC protocols
+    \item syntax for secrets, random values, messages, public reveal\\
+    \item 3 party example in Overture?\\
+    \end{itemize}
 \end{frame}
 \begin{frame}
     Correctness properties and postconditions\\
-    - property for 3-party add, how we can translate that into SMT \\
+    \begin{itemize}
+    \item Correctness property for 3-party addition
+    \item We want to automatically check these properties with SMT
+    \end{itemize}
 \end{frame}
 \begin{frame}
     Satisfiability Modulo Bit-Vector Theory\\
-    - extension of SAT, searching over all bit-vector inputs\\
-    - simple pythonic api example\\
-    - constraints, finding solutions to pre and postcondition\\
+    \begin{itemize}
+    \item Extension of SAT, searching over all bit-vector inputs\\
+    \item Include simple pythonic api example, explain how BV operations work\\
+    \item Constraints of example, finding solutions to pre and postcondition\\
+    \end{itemize}
 \end{frame}
 \begin{frame}
     Satisfiability Modulo Bit-Vector Theory\\
-    - theorem 4.1 about entailment and e1 AND not e2 \\
+    \begin{itemize}
+    \item theorem 4.1 about entailment and e1 AND not e2 \\
+    \end{itemize}
 \end{frame}
 \begin{frame}
     \textit{Prelude} Language\\
-    - metalanguage, executing \textit{Prelude} generates an \textit{Overture} MPC protocol\\
-    -  2 party not xor example\\
-    - circuit and prelude version\\
+    \begin{itemize}
+    \item Metalanguage, executing \textit{Prelude} generates an \textit{Overture} MPC protocol\\
+    \item 2 party not xor example with circuit and prelude version\\
+    \end{itemize}
 \end{frame}
 \begin{frame}
     \textit{Prelude} Language\\
-    - introduction of andgmw() with 2-bit adder\\
-    - circuit first
+    \begin{itemize}
+    \item introduction of \texttt{andgmw()} with 2-bit adder\\
+    \item Circuit, dropping carry bit like \texttt{BVAdd()}
+    \end{itemize}
 \end{frame}
 \begin{frame}
     \textit{Prelude} Language\\
-    - 2 bit adder prelude\\
-    - talk about post condition, how it translates well to larger circuits\\
+    \begin{itemize}
+    \item 2-bit adder \textit{Prelude} implementation\\
+    \item Explain postcondition and that format is very similar for our larger circuits
+    \end{itemize}
 \end{frame}
 \begin{frame}
     Perl Parser\\
-    - character classes to capture gate name and wires\\
-    - automatic postcondition verification\\ 
+    \begin{itemize}
+    \item Format of Bristol Circuits, hundreds to thousands of gates
+    \item Character classes to capture gate name and wires\\
+    \item Automatic postcondition generation (also tedious)\\ 
+    \end{itemize}
 \end{frame}
 \begin{frame}
     Boolean circuits\\
-    - 64-bit addition, subtraction, and multiplication
-    - these operations in \textit{Prelude} reduces bottleneck and automatically gives us functionality\\ 
+    \begin{itemize}
+    \item 64-bit addition, subtraction, and multiplication
+    \item Having these operations from cvc5 in \textit{Prelude} reduces bottleneck and automatically gives us functionality\\ 
+    \end{itemize}
 \end{frame}
 \begin{frame}
     Experiments and Results\\
-    - insert table\\
     \begin{figure}[h]
         \begin{center}
             \scalebox{0.8}{
@@ -111,11 +136,10 @@
         \end{center}
         \caption{Verification times for all boolean circuits (averaged over 20 runs)}
         \label{fig-results}
-        \end{figure}
+    \end{figure}
 \end{frame}
 \begin{frame}
     Experiments and Results\\
-    - insert graph\\
     \begin{figure}
         \centerline{\includegraphics[scale=0.4]{../verification-graph.png}}
     \caption{Scatter plot of circuit verification time over number of gates}
@@ -139,6 +163,6 @@
     \end{itemize}
 \end{frame}
 \begin{frame}
-    Acknowledgements
+    References
 \end{frame}
 \end{document}
