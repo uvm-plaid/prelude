@@ -1,121 +1,307 @@
 \documentclass{beamer}
 \usepackage{moreverb}
 
+\input{../macros}
 \title{Empirical Evaluation of the \textit{Prelude} Automatic Verification Engine with Boolean Circuits}
-\author{Honors Thesis by Felix Walberg\\Advised by Dr. Christian Skalka}
+\author{Honors Thesis by Felix Walberg\\Advised by Dr.~Christian~Skalka}
 \date{April 15, 2026}
 \begin{document}
 \begin{frame}
     \titlepage 
 \end{frame}
-\begin{frame}
-    Overview\\
+\begin{frame}{Overview}
+    % Overview\\
     \begin{itemize}
-    \item Working with MPC protocols to perform secure computations on shared data
-    \item Automatically verifying these protocols are correct with \textit{Prelude} tool
-    \item Testing how this tool scales as boolean circuits get larger
-    \item Why we believe Bit-Vector theory was worth using
+    \item Multi-Party Computation protocols perform secure computations on shared data across distributed participants.
+    \item \textbf{Goal}: Ensure that the protocol is computing the correct value.
+    \item \textbf{Solution}: Automatically verify it with \textit{Prelude} tool using Satisfiability Modulo Theories.
+    \item How well can this tool scale as Boolean circuits get larger?
+    \item Why we believe Bit-Vector theory was worth using.
     \end{itemize}
 \end{frame}
-\begin{frame}
-    Contributions\\
+\begin{frame}{Contributions}
+    Existing literature \footnote{Skalka and Near, ESOP 2025} evaluates the \textit{Prelude} framework on smaller circuits using Satisfiability Modulo Finite Fields theory. 
     \begin{itemize}
-        \item \texttt{BVAdd/BVSub/BVMult/BVConcat} into \textit{Prelude} backend
-        \item Parser for Bristol Circuits into \textit{Prelude} code
-        \item Circuits with postconditions for Bit-Vector operations that were automatically verified
+        \item Substantial verification time for small binary circuits.
+        \item Relatively new compared to more established theories like the Satisfiability Modulo Bit-Vector theory.
+    \end{itemize}
+    Our contributions:
+    \begin{itemize}
+        \item Extension of the \textit{Prelude} backend to include \texttt{BVAdd/BVSub/BVMult/BVConcat}.
+        \item Parsing script written in Perl to turn Boolean circuits into code that the \textit{Prelude} tool can verify.
+        \item Secure Boolean circuits and their corresponding postconditions for Bit-Vector addition, subtraction, and multiplication.
+        \item An empirical evaluation of the verification time as the circuit size grows.
     \end{itemize}
 \end{frame}
-\begin{frame}
-    Introduction to MPC\\
+\begin{frame}{Introduction to MPC}
+    Multi-Party Computation (MPC) protocols serve as a way for distributed parties to compute shared functions on their data without revealing information about their data.
     \begin{itemize}
-    \item Motivations: securely compute shared functions in private data
-    \item Ideal functionality, real-ideal world
+    \item \textbf{Objectives}: Compute the function correctly. Do not reveal \textit{too much} about each party's secrets.
+    \item \textbf{Real-Ideal Paradigm}: Trusted oracle, ideal functionality, translation between ideal world and protocols in the real world.
     \end{itemize}
 \end{frame}
-\begin{frame}
-    Introduction to MPC\\
+\begin{frame}{Introduction to MPC}
+    If an adversary is controlling a subset of the parties in a protocol, their goal might be to learn about the secrets of the honest parties. How do we stop them from learning anything they should not know?
     \begin{itemize}
-    \item What corrupt view learns and should not learn
-    \item Millionaires problem\\
+    \item Conditional on the output, the adversary should be no better off in determining the secrets.
+    \item If our protocol only gives them as much information as the ideal functionality output, then it is considered secure. This does not mean it is safe!
+    \end{itemize}
+    \textbf{Example:} Millionaires' Problem
+
+\end{frame}
+\begin{frame}{Introduction to MPC}
+    We are considering the Goldreich-Micali-Wigderson (GMW) protocol, defined for binary circuits, where a party's input secret is represented by uniformly random values that xor together to form the secret. The values in these protocols are in the binary field $\mathbb{F}_2$ where $+$, $-$, and $*$ operations are defined.
+    \begin{itemize}
+    \item xor is equialent to $+$.
+    \item $\wedge$ is equivalent to $*$.
+    \item Since the field elements are finite, we can have uniform randomness.
+    \item Values are \textit{local}, as parties are distributed. We communicate values between parties with messages. 
     \end{itemize}
 \end{frame}
-\begin{frame}
-    Introduction to MPC
+\begin{frame}{Overture}
+    \textit{Overture} is a language used for designing low-level MPC protocols. We can use the language to describe communication between parties and operations on their values.
     \begin{itemize}
-    \item MPC is distributed, localized values\\ 
-    \item 3 party addition intro, connecting ideal functionality to correctness
+    \item $\secret{x}$ is a secret value in $\mathbb{F}_2$.
+    \item $\flip{x}$ is a uniformly random sample from the field.
+    \item $\rvl{x}$ is a public reveal.
+    \item $\mesg{x}$ is a message.
+    % \item 3 party example in Overture?\\
+    \end{itemize}
+    % Taken from https://github.com/uvm-plaid/jpdf/blob/main/esop25/camera-ready/smt.tex
+\begin{figure}
+    {\footnotesize
+    $$
+    \begin{array}{c@{\qquad}c}
+    \begin{array}{llllll}
+      \elab{\mesg{s1}}{2} &:=& \elab{(\secret{1} \fminus \locflip \fminus \flip{x})}{1} \\ 
+      \elab{\mesg{s1}}{3} &:=& \elab{\flip{x}}{1} \\ 
+      \elab{\mesg{s2}}{1} &:=& \elab{(\secret{2} \fminus \locflip \fminus \flip{x})}{2} \\ 
+      \elab{\mesg{s2}}{3} &:=& \elab{\flip{x}}{2} \\ 
+      \elab{\mesg{s3}}{1} &:=& \elab{(\secret{3} \fminus \locflip \fminus \flip{x})}{3} \\ 
+      \elab{\mesg{s3}}{2} &:=& \elab{\flip{x}}{3} \\
+    \end{array}
+    \end{array}$$
+    }
+    \caption{3-Party Addition from \footnote{Skalka and Near, ESOP 2025}}
+    \label{fig-3-party-add}
+    \end{figure}
+\end{frame}
+\begin{frame}{Correctness Properties and Postconditions}
+    % Taken from https://github.com/uvm-plaid/jpdf/blob/main/esop25/camera-ready/smt.tex
+\begin{figure}
+    {\footnotesize
+    $
+    \begin{array}{c@{\qquad}c}
+    \begin{array}{llllll}
+      \rvl{1} &:=& \elab{(\locflip \fplus \mesg{s2} \fplus \mesg{s3})}{1} \\ 
+      \rvl{2} &:=& \elab{(\mesg{s1} \fplus \locflip \fplus \mesg{s3})}{2} \\
+      \rvl{3} &:=& \elab{(\mesg{s1} \fplus \mesg{s2} \fplus \locflip)}{3} \\
+      \out{1} &:=& \elab{(\rvl{1} \fplus \rvl{2} + \rvl{3})}{1}\\
+      \out{2} &:=& \elab{(\rvl{1} \fplus \rvl{2} + \rvl{3})}{2}\\
+      \out{3} &:=& \elab{(\rvl{1} \fplus \rvl{2} + \rvl{3})}{3}
+    \end{array}
+    \end{array}$
+    }
+    \caption{3-Party Addition from \footnote{Skalka and Near, ESOP 2025}}
+    \label{fig-3-party-add}
+    \end{figure}
+    \begin{itemize}
+    \item Additive Homomorphism: We can add local shares at each party, then add those sums together to get the sum of the 3 secrets.
+    \item The postcondition is {$\out{1} \eop \sx{1}{1} \fplus \sx{2}{2} \fplus \sx{3}{3}\strut$}.
+    \item We want to automatically check that these constraint properties hold.
+    \end{itemize}
+
+\end{frame}
+\begin{frame}[fragile]{Satisfiability Modulo Bit-Vector Theory}
+    Satisfiability Modulo Theories (SMT) are used for the problem of finding solutions to satisfy a set of constraints.
+    % an extension of the Boolean Satisfiability Problem where we search to find a set of inputs such that some set of constraints is satisfiable.
+    \begin{itemize}
+        \item This is done with respect to a theory, in our case Bit-Vector theory.
+        % \item A SMT solver automatically searches for a solution for a subset of Bit-Vectors.
+    \end{itemize}
+    We used the Cooperating Validity Checker (cvc5) library, which has an established Bit-Vector theory for SMT solving.
+    \begin{itemize}
+    \item All bit-vector operations are defined natively, no bottleneck to make external calls.
+    % \item Functionality of each operation already exists and we avoid writing them ourselves.
+    \end{itemize}
+    \begin{figure}
+        {\footnotesize
+        \begin{center} 
+            \begin{verbatimtab}
+from cvc5.pythonic import *
+a, b = BitVecs('a b', 5)
+x = BitVecVal(10, 5)
+y = BitVecVal(22, 5)
+z = BitVecVal(2, 5)
+// BV representation of solve(a + 10 == 2 * b, b + 22 == 2 * a)
+solve(BVAdd(a, x) == BVMult(z, b), BVAdd(b, y) == BVMult(z, a))
+        \end{verbatimtab}
+        \end{center}
+        }
+        \caption{cvc5 Pythonic library example of SMT}
+        \label{fig-cvc5}
+    \end{figure}
+\end{frame}
+\begin{frame}{Satisfiability}
+    \begin{figure}
+        \begin{center}
+    {\footnotesize{\texttt{solve(BVAdd(a, x) == BVMult(z, b), BVAdd(b, y) == BVMult(z, a))}}}
+        \end{center}
+    \end{figure}
+    With the solution \texttt{[a = 18, b = 14]}, this set of constraints is satisfiable. But, this is not good enough for verifying a correctness property for an MPC protocol.
+    \begin{itemize}
+        \item We want to ensure it is satisfied in \textit{all} cases, but SMT solvers often disallow quantifiers.
+    \item 
+        \textbf{Theorem: }$\eqs_1 \models \eqs_2$ \textit{iff} $\eqs_1 \wedge \neg\eqs_2$ \textit{is not satisfiable.}
+        \begin{itemize}
+            \item $\models$ means that $\eqs_1$ \textit{models} $\eqs_2$.
+            \item Say $\eqs_1$ is the precondition and $\eqs_2$ is the postcondition.
+            \item If the negation of the postcondition holds for any solution of the precondition, the protocol is incorrect!
+        \end{itemize}
     \end{itemize}
 \end{frame}
-\begin{frame}
-    \textit{Overture}\\
-    \begin{itemize}
-    \item Language for writing MPC protocols
-    \item syntax for secrets, random values, messages, public reveal\\
-    \item 3 party example in Overture?\\
-    \end{itemize}
-\end{frame}
-\begin{frame}
-    Correctness properties and postconditions\\
-    \begin{itemize}
-    \item Correctness property for 3-party addition
-    \item We want to automatically check these properties with SMT
-    \end{itemize}
-\end{frame}
-\begin{frame}
-    Satisfiability Modulo Bit-Vector Theory\\
-    \begin{itemize}
-    \item Extension of SAT, searching over all bit-vector inputs\\
-    \item Include simple pythonic api example, explain how BV operations work\\
-    \item Constraints of example, finding solutions to pre and postcondition\\
-    \end{itemize}
-\end{frame}
-\begin{frame}
-    Satisfiability Modulo Bit-Vector Theory\\
-    \begin{itemize}
-    \item theorem 4.1 about entailment and e1 AND not e2 \\
-    \end{itemize}
-\end{frame}
-\begin{frame}
-    \textit{Prelude} Language\\
+\begin{frame}[fragile]{\textit{Prelude} Language}
+    We can execute a \textit{Prelude} program to \textit{generate} an \textit{Overture} MPC protocol.
+    \begin{figure}
+        \begin{minipage}[t]{.5\textwidth}
+            \begin{itemize}
+                \item This gives us the ability to define pre and postconditions for our GMW-style functions.
+                \item With secure versions of \textit{xor} and \textit{not}, we can define secure binary circuits.
+            \end{itemize}
+            \end{minipage}%
+            \begin{minipage}[t]{.5\textwidth}
+                    {\scriptsize
+                    \begin{verbatimtab}
+exprfunctions:
+
+RECON(x) { (m[x]@1 + m[x]@2) }
+
+not(x){ x + 1 }
+
+cmdfunctions:
+
+xorgmw(z:string, x:string, y:string) {
+    m[z]@1 := (m[x] + m[y])@1; 
+    m[z]@2 := (m[x] + m[y])@2
+} 
+postcondition: (RECON(z) == 
+                RECON(x) + RECON(y))
+
+notgmw(z:string, x:string) {
+    m[z]@1 := m[x]@1;
+    m[z]@2 := not(m[x])@2
+}
+postcondition: ( RECON(z) == 
+                not(RECON(x)) )
+                    \end{verbatimtab}
+                    }
+                    \caption{\textit{Prelude} libraries for GMW-style gates}
+                    \label{fig-prelude-gmw}
+                \end{minipage}
+    \end{figure}
     \begin{itemize}
     \item Metalanguage, executing \textit{Prelude} generates an \textit{Overture} MPC protocol\\
     \item 2 party not xor example with circuit and prelude version\\
     \end{itemize}
 \end{frame}
-\begin{frame}
-    \textit{Prelude} Language\\
+\begin{frame}[fragile]{\textit{Prelude} Language}
+    \begin{figure}
+        \centerline{\includegraphics[scale=.2]{../2-party-not-xor.png}}
+        \caption{2-Party NOT XOR Circuit Diagram}
+        \label{fig-2-party-not-xor}
+    \end{figure}
+    \begin{figure}
+                {\footnotesize
+                \begin{verbatimtab}
+main() {
+    notgmw("g1", "x");
+    xorgmw("z", "g1", "y")
+} 
+postcondition: (RECON("z") == RECON("y") + not(RECON("x")))
+                \end{verbatimtab}
+                }
+                \caption{2-Party NOT XOR example protocol}
+                \label{fig-2-party-not-xor-code}
+    \end{figure}
+\end{frame}
+\begin{frame}[fragile]{\textit{Prelude} Language 2-Bit Adder}
+    % \begin{itemize}
+    % \item introduction of \texttt{andgmw()} with 2-bit adder\\
+    % \item Circuit, dropping carry bit like \texttt{BVAdd()}
+    % \end{itemize}
+    \begin{figure}
+        \centerline{\includegraphics[scale=0.2]{../2-bit-adder.png}}
+    % \caption{2-Bit Adder circuit diagram}
+    % \label{fig-2-bit-adder-circuit}
+    \end{figure}
+    \begin{figure}
+        {\footnotesize
+        \begin{verbatimtab}
+main() {
+    xorgmw("z1", "x1", "y1"); // Bit 0 (least significant)
+    andgmw("g1", "x1", "y1");
+    xorgmw("g2", "x2", "y2");
+    xorgmw("z2", "g2", "g1") // Bit 1 (most significant)
+} 
+postcondition: (|RECON("z2"), RECON("z1")| == 
+                    BVAdd(|RECON("x2"), RECON("x1")|, 
+                        |RECON("y2"), RECON("y1")|))
+        \end{verbatimtab}
+        }
+        \caption{2-Bit Adder in \textit{Prelude}}
+        \label{fig-2-bit-adder}
+    \end{figure}%
+\end{frame}
+% \begin{frame}
+%     \textit{Prelude} Language\\
+%     \begin{itemize}
+%     \item 2-bit adder \textit{Prelude} implementation\\
+%     \item Explain postcondition and that format is very similar for our larger circuits
+%     \end{itemize}
+% \end{frame}
+\begin{frame}[fragile]{Perl Parser}
+    % This is tedious! Hundreds to thousands of gates...
+    \textbf{Goal:} Bristol Circuit $\longrightarrow$ GMW-Style \textit{Prelude} function call
+    \begin{figure}
+        \begin{minipage}{.5\textwidth}
+            \begin{verbatimtab}%
+2 1 63 127 376 XOR
+2 1 62 126 375 XOR
+2 1 61 125 374 XOR
+2 1 60 124 373 XOR
+            \end{verbatimtab}%
+        \end{minipage}%
+        \begin{minipage}{.5\textwidth}
+            \begin{verbatimtab}%
+xorgmw("376", "63", "127");
+xorgmw("375", "62", "126");
+xorgmw("374", "61", "125");
+xorgmw("373", "60", "124");
+            \end{verbatimtab}%
+        \end{minipage}
+    \end{figure}
     \begin{itemize}
-    \item introduction of \texttt{andgmw()} with 2-bit adder\\
-    \item Circuit, dropping carry bit like \texttt{BVAdd()}
+    \item Character classes to match parts of each gate.
+        \begin{itemize}
+            \item \texttt{my (\$gt) = (\$gate =~ /(\textbackslash w+)\$/);} % matches a word
+            \item \texttt{my (\$inwl, \$inwr, \$outw) = \\ % matches a decimal digit character, "+" is a meta character
+            (\$gate =~ /\textbackslash d \textbackslash d (\textbackslash d+) (\textbackslash d+) (\textbackslash d+)/);}
+        \end{itemize}
+    \item Automatic postcondition generation (also tedious).\\ 
     \end{itemize}
 \end{frame}
-\begin{frame}
-    \textit{Prelude} Language\\
+\begin{frame}{Boolean Circuits}
+    We implemented \textit{Prelude} circuits for 64-bit addition, 64-bit subtraction, and 64-bit multiplication.
     \begin{itemize}
-    \item 2-bit adder \textit{Prelude} implementation\\
-    \item Explain postcondition and that format is very similar for our larger circuits
+    \item These are ordered in increasing circuit size (number of gates).
+    \item With postconditions similar to the 2-bit adder, it is important that the bit-vector operations are native to the cvc5 SMT solver.
+    \item Demo!
     \end{itemize}
 \end{frame}
-\begin{frame}
-    Perl Parser\\
-    \begin{itemize}
-    \item Format of Bristol Circuits, hundreds to thousands of gates
-    \item Character classes to capture gate name and wires\\
-    \item Automatic postcondition generation (also tedious)\\ 
-    \end{itemize}
-\end{frame}
-\begin{frame}
-    Boolean circuits\\
-    \begin{itemize}
-    \item 64-bit addition, subtraction, and multiplication
-    \item Having these operations from cvc5 in \textit{Prelude} reduces bottleneck and automatically gives us functionality\\ 
-    \end{itemize}
-\end{frame}
-\begin{frame}
-    Experiments and Results\\
-    \begin{figure}[h]
+\begin{frame}[fragile]{Experiments and Results}
+    \begin{figure}
         \begin{center}
-            \scalebox{0.8}{
+            \scalebox{0.8}{\hspace*{-.5cm}
         \begin{tabular}{ |c|c|c|c|c|c|}
             \hline
             & 2 party & 2-Bit & 64-Bit & 64-Bit & 64x64 -$>$ 64-Bit \\
@@ -134,35 +320,31 @@
         \end{tabular}
         }
         \end{center}
-        \caption{Verification times for all boolean circuits (averaged over 20 runs)}
+        \caption{Verification times for all Boolean circuits (averaged over 20 runs)}
         \label{fig-results}
     \end{figure}
 \end{frame}
-\begin{frame}
-    Experiments and Results\\
+\begin{frame}{Experiments and Results}
     \begin{figure}
         \centerline{\includegraphics[scale=0.4]{../verification-graph.png}}
     \caption{Scatter plot of circuit verification time over number of gates}
     \label{verification-graph}
     \end{figure}
-    - talk about roughly exponential shape\\
+    This looks fairly exponential!
 \end{frame}
-\begin{frame}
-    Conclusions and Future Work\\
+\begin{frame}{Conclusions and Future Work}
+    How did the \textit{Prelude} automatic verification engine perform?
     \begin{itemize}
-        \item 64-bit Addition, 64-bit Subtraction verify reasonably
-        \item 64-bit Multiplication posed significant challenge to the tool
+        \item 64-bit Addition, 64-bit Subtraction verify reasonably.
+        \item 64-bit Multiplication posed significant challenge to the tool.
     \end{itemize}
 \end{frame}
-\begin{frame}
-    Conclusions and Future Work\\
+\begin{frame}{Conclusions and Future Work}
+    Where do we see this going next?
     \begin{itemize}
-    \item Extend evaluation to Yao's Garbled Circuits, which were considered in (cite both prev papers)
-    \item Optimize \textit{Prelude} backend to reduce memory usage when creating constraints
-    \item With reduced memory usage, attempt to verify 64-bit Multiplication, 64-bit Division
+    \item Optimize \textit{Prelude} backend to reduce memory usage when creating constraints.
+    \item With reduced memory usage, attempt to verify 64-bit Multiplication, 64-bit Division.
+    \item Extend evaluation to Yao's Garbled Circuits, which were considered in \footnote{Skalka and Near, ESOP 2025}.
     \end{itemize}
-\end{frame}
-\begin{frame}
-    References
 \end{frame}
 \end{document}
